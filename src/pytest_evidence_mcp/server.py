@@ -1,6 +1,6 @@
 from mcp.server import MCPServer
 
-from pytest_evidence_mcp.tools.errors import EvidenceError
+from pytest_evidence_mcp.core.errors import EvidenceError
 
 mcp = MCPServer("pytest-evidence-mcp")
 
@@ -24,7 +24,7 @@ def get_test_failure(test_name: str, path: str = "."):
     output captured during that test — no diagnosis, only raw evidence.
     """
 
-    raise EvidenceError("list_failed_tests is not implemented yet")
+    raise EvidenceError("get_test_failure is not implemented yet")
 
 
 @mcp.tool()
@@ -35,7 +35,7 @@ def inspect_fixture(path: str):
     `path` points to the fixture file, not to the project.
     """
 
-    raise EvidenceError("list_failed_tests is not implemented yet")
+    raise EvidenceError("inspect_fixture is not implemented yet")
 
 
 @mcp.tool()
@@ -46,4 +46,4 @@ def parse_pytest_output(raw_text: str):
     was pasted by hand. Less reliable than the other tools.
     """
 
-    raise EvidenceError("list_failed_tests is not implemented yet")
+    raise EvidenceError("parse_pytest_output is not implemented yet")
