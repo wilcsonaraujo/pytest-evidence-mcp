@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from pytest_evidence_mcp.core.assertion import (
@@ -8,9 +8,9 @@ from pytest_evidence_mcp.core.assertion import (
     extract_actual_expected_safe,
 )
 from pytest_evidence_mcp.core.models import (
-    SourceKind,
     CapturedOutput,
     FailureDetail,
+    SourceKind,
     TestCaseResult,
     TestRun,
 )

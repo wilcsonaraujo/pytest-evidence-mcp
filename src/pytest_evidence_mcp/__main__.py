@@ -3,6 +3,7 @@ import sys
 
 from pytest_evidence_mcp.server import mcp
 
+
 def main() -> None:
     """Inicialize the MCP server"""
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)

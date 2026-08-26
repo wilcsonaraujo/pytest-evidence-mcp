@@ -1,18 +1,18 @@
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
+from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources.config import (
     get_config_paths,
-    get_default_junit_path,
     get_default_json_report_path,
+    get_default_junit_path,
 )
 from pytest_evidence_mcp.sources.json_report import parse_json_report
 from pytest_evidence_mcp.sources.junitxml import parse_junit_xml
 from pytest_evidence_mcp.sources.runner import run_pytest
-from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
-from pytest_evidence_mcp.core.models import SourceKind, TestRun
 
 logger = logging.getLogger(__name__)
 

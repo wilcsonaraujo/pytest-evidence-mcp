@@ -1,5 +1,5 @@
-import re
 import configparser
+import re
 
 try:
     import tomllib
@@ -7,7 +7,7 @@ except ImportError:  # Python 3.10 doesn't ship tomllib
     import tomli as tomllib
 
 from pathlib import Path
-from typing import Optional, NamedTuple, List, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 from pytest_evidence_mcp.core.errors import ConfigParseError
 
