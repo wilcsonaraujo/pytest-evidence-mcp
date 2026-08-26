@@ -3,7 +3,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
-from pytest_evidence_mcp.core.assertion import extract_actual_expected_safe
+from pytest_evidence_mcp.core.assertion import (
+    derive_error_type_from_traceback,
+    extract_actual_expected_safe,
+)
 from pytest_evidence_mcp.core.models import (
     SourceKind,
     CapturedOutput,
@@ -34,32 +37,22 @@ def _safe_float(value: Optional[str], default: float = 0.0) -> float:
 
 
 def _parse_timestamp(timestamp: Optional[str]) -> Optional[datetime]:
-    """Parse JUnit XML timestamp to datetime."""
+    """Parse JUnit XML timestamp to datetime.
+
+    Real pytest output includes a UTC offset (e.g. '...T14:35:30.18-03:00'),
+    which fromisoformat handles directly. Normalized to naive to match
+    json_report.py's timestamps, so callers can compare against
+    datetime.now() without worrying about timezones.
+    """
     if not timestamp:
         return None
 
-    formats = [
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d %H:%M:%S",
-    ]
-
-    for fmt in formats:
-        try:
-            return datetime.strptime(timestamp, fmt)
-        except ValueError:
-            continue
-    return None
-
-
-def parse_junit_xml_safe(
-    file_path: Path, source: str = "junitxml"
-) -> Optional[TestRun]:
-    """Safe version of parse_junit_xml that does not raise an exception"""
     try:
-        return parse_junit_xml(file_path, source)
-    except Exception as e:
+        parsed = datetime.fromisoformat(timestamp)
+    except ValueError:
         return None
+
+    return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
 
 
 def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
@@ -78,9 +71,11 @@ def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
 
     if failure is not None:
         outcome = "failed"
-        error_type = failure.get("type")
-        message = failure.text or failure.get("message", "")
+        # <failure> has no `type` attribute in real pytest output - derive
+        # error_type from the traceback instead.
         traceback = failure.text
+        message = failure.get("message", "") or (traceback or "")
+        error_type = derive_error_type_from_traceback(traceback)
 
         actual, expected = extract_actual_expected_safe(message, error_type)
 
@@ -103,9 +98,9 @@ def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
 
     elif error is not None:
         outcome = "error"
-        error_type = error.get("type")
-        message = error.text or error.get("message", "")
         traceback = error.text
+        message = error.get("message", "") or (traceback or "")
+        error_type = derive_error_type_from_traceback(traceback)
 
         actual, expected = extract_actual_expected_safe(message, error_type)
 
@@ -150,7 +145,9 @@ def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
         )
 
 
-def parse_junit_xml(file_path: str, source: str = "junitxml") -> TestRun:
+def parse_junit_xml(
+    file_path: str, source: SourceKind = SourceKind.JUNITXML
+) -> TestRun:
     """Parses a JUnit XML file into a TestRun object."""
     try:
         tree = ET.parse(file_path)
@@ -191,7 +188,9 @@ def parse_junit_xml(file_path: str, source: str = "junitxml") -> TestRun:
     )
 
 
-def parse_junit_xml_safe(file_path: str, source: str = "junitxml") -> Optional[TestRun]:
+def parse_junit_xml_safe(
+    file_path: str, source: SourceKind = SourceKind.JUNITXML
+) -> Optional[TestRun]:
     """Safe version of parse_junit_xml that does not raise an exception."""
     try:
         return parse_junit_xml(file_path, source)

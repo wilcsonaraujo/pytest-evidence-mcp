@@ -7,16 +7,7 @@ _ASSERT_EQ = re.compile(r"^assert\s+(.+?)\s*==\s*(.+)$", re.MULTILINE)
 def extract_actual_expected(
     message: str, error_type: Optional[str] = None
 ) -> Tuple[Optional[str], Optional[str]]:
-    """Extract (expected, actual) from an AssertionError message, when safe.
-
-    Only extracts for `==` comparisons on `AssertionError`. Any other shape
-    (custom exceptions, `!=`/`in`/`<`, unrecognised text) returns (None, None)
-    — failing to recognise the pattern is the normal path, not an error.
-
-    Convention: `assert <actual> == <expected>` (the author's variable comes
-    first). This is a convention, not something pytest tells us — swapped
-    assertions (`assert 201 == status`) will mislabel the pair.
-    """
+    """Extract (expected, actual) from an AssertionError message, when safe."""
     if error_type != "AssertionError" or not message:
         return None, None
 
@@ -40,3 +31,20 @@ def extract_actual_expected_safe(
         return extract_actual_expected(message, error_type)
     except Exception:
         return None, None
+
+
+def derive_error_type_from_traceback(traceback_text: Optional[str]) -> Optional[str]:
+    """Derive the exception class name from a pytest traceback block."""
+    if not traceback_text:
+        return None
+
+    lines = [line for line in traceback_text.strip().splitlines() if line.strip()]
+    if not lines:
+        return None
+
+    last_line = lines[-1]
+    if ":" not in last_line:
+        return None
+
+    error_type = last_line.rsplit(":", 1)[-1].strip()
+    return error_type or None

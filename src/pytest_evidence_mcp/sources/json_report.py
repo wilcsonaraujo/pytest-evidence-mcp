@@ -3,7 +3,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pytest_evidence_mcp.core.assertion import extract_actual_expected_safe
+from pytest_evidence_mcp.core.assertion import (
+    derive_error_type_from_traceback,
+    extract_actual_expected_safe,
+)
 from pytest_evidence_mcp.core.models import (
     CapturedOutput,
     FailureDetail,
@@ -80,11 +83,7 @@ def _parse_test_case(test_data: Dict[str, Any]) -> Optional[TestCaseResult]:
         crash = phase["crash"]
         message = crash.get("message", "")
         traceback = phase.get("longrepr")
-
-        if ":" in message and not message.startswith("assert"):
-            error_type = message.split(":", 1)[0].strip()
-        else:
-            error_type = "AssertionError"
+        error_type = derive_error_type_from_traceback(traceback)
 
         actual, expected = extract_actual_expected_safe(message, error_type)
 
@@ -122,7 +121,9 @@ def parse_json_report(
     summary = data.get("summary", {})
     total_tests = summary.get("total", 0)
     passed = summary.get("passed", 0)
-    failed = summary.get("failed", 0)
+    # "failed" and "error" are separate counters here - combined to match
+    # how junitxml.py already merges <failure>/<error> into one number.
+    failed = summary.get("failed", 0) + summary.get("error", 0)
     skipped = summary.get("skipped", 0)
 
     created = data.get("created")

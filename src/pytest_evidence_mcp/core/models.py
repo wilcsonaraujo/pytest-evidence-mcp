@@ -37,6 +37,8 @@ class CapturedOutput(BaseModel):
 
 
 class TestCaseResult(BaseModel):
+    __test__ = False  # not a pytest test class, just named like one
+
     nodeid: str = Field(
         description="Full pytest nodeid, e.g. 'tests/test_api.py::test_foo'."
     )
@@ -55,6 +57,8 @@ class TestRun(BaseModel):
     Tools never see the raw XML/JSON — only this.
     """
 
+    __test__ = False  # not a pytest test class, just named like one
+
     source: SourceKind
     generated_at: datetime | None = Field(
         default=None,
@@ -70,13 +74,13 @@ class TestRun(BaseModel):
     def failed_tests(self) -> list[TestCaseResult]:
         return [test for test in self.tests if test.outcome in ("failed", "error")]
 
-    def get_parse_passed(test_run: TestRun) -> list[TestCaseResult]:
+    def passed_tests(self) -> list[TestCaseResult]:
         """Returns only the test cases that passed."""
-        return [tc for tc in test_run.tests if tc.outcome == "passed"]
+        return [test for test in self.tests if test.outcome == "passed"]
 
-    def get_parse_skipped(test_run: TestRun) -> list[TestCaseResult]:
+    def skipped_tests(self) -> list[TestCaseResult]:
         """Returns only the skipped test cases."""
-        return [tc for tc in test_run.tests if tc.outcome == "skipped"]
+        return [test for test in self.tests if test.outcome == "skipped"]
 
     def find(self, nodeid_or_name: str) -> TestCaseResult | None:
         """Look up by full nodeid first, then by short name. Returns None,

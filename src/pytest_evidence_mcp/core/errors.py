@@ -34,7 +34,7 @@ class PytestExecutionError(EvidenceError):
     pass
 
 
-class ResolverError(Exception):
+class ResolverError(EvidenceError):
     """Erro base para falhas no resolver."""
 
     pass

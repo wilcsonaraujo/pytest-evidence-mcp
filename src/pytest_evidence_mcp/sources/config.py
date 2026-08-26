@@ -1,6 +1,10 @@
 import re
 import configparser
-import tomllib
+
+try:
+    import tomllib
+except ImportError:  # Python 3.10 doesn't ship tomllib
+    import tomli as tomllib
 
 from pathlib import Path
 from typing import Optional, NamedTuple, List, Tuple
@@ -45,12 +49,13 @@ def parse_pytest_config(project_path: Optional[Path] = None) -> PytestPaths:
         ("setup.cfg", project_path / "setup.cfg"),
     ]
 
-    for filename, parser_type in config_files:
-        file_path = project_path / filename
+    for filename, file_path in config_files:
         if file_path.exists():
-            addopts = _parse_addopts_from_file(file_path, parser_type)
+            # dispatch on the filename string, not file_path (a Path never
+            # equal to the literals below)
+            addopts = _parse_addopts_from_file(file_path, filename)
             if addopts:
-                return _extract_paths_from_addopts(addopts)
+                return _extract_paths_from_addopts(addopts, project_path)
     return PytestPaths(None, None)
 
 
