@@ -200,35 +200,35 @@ def resolve_test_run(
         ResolverError: invalid force=, or that forced source wasn't found.
         EvidenceError: branch 3 failed - the specific subclass says why.
     """
-    project_path = Path(project_path)
-    logger.info(f"Resolving test run for: {project_path}")
+    project_root = Path(project_path)
+    logger.info(f"Resolving test run for: {project_root}")
 
     if force:
         logger.debug(f"Force mode: {force}")
         if force == "json":
-            return _resolve_json_report(project_path)
+            return _resolve_json_report(project_root)
         elif force == "junit":
-            return _resolve_junit_xml(project_path)
+            return _resolve_junit_xml(project_root)
         elif force == "subprocess":
-            return _resolve_subprocess(project_path, explicit_interpreter, timeout)
+            return _resolve_subprocess(project_root, explicit_interpreter, timeout)
         else:
             raise ResolverError(f"Invalid force value: {force}")
 
     # 1. Try JSON report
     try:
         logger.debug("Attempting JSON report (Ramo 1)")
-        return _resolve_json_report(project_path)
+        return _resolve_json_report(project_root)
     except ResolverError as e:
         logger.debug(f"JSON report unavailable: {e}")
 
     # 2. Try JUnit XML
     try:
         logger.debug("Attempting JUnit XML (Ramo 2)")
-        return _resolve_junit_xml(project_path)
+        return _resolve_junit_xml(project_root)
     except ResolverError as e:
         logger.debug(f"JUnit XML unavailable: {e}")
 
     # 3. Execute pytest - last resort, no try/except here on purpose (see
     # _resolve_subprocess's docstring).
     logger.debug("Attempting subprocess (Ramo 3)")
-    return _resolve_subprocess(project_path, explicit_interpreter, timeout)
+    return _resolve_subprocess(project_root, explicit_interpreter, timeout)

@@ -4,7 +4,7 @@ import re
 try:
     import tomllib
 except ImportError:  # Python 3.10 doesn't ship tomllib
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 
 from pathlib import Path
 from typing import NamedTuple
@@ -69,7 +69,7 @@ def _parse_addopts_from_file(file_path: Path, parser_type: str) -> str | None:
         return _parse_ini_addopts(file_path)
 
 
-def _parse_pyproject_addopts(file_path: str) ->str | None:
+def _parse_pyproject_addopts(file_path: Path) -> str | None:
     """Extracts addopts from pyproject.toml."""
     try:
         with open(file_path, "rb") as file:
@@ -93,7 +93,7 @@ def _parse_pyproject_addopts(file_path: str) ->str | None:
     return None
 
 
-def _parse_tox_addopts(file_path: str) -> str | None:
+def _parse_tox_addopts(file_path: Path) -> str | None:
     """Extracts options from tox.ini (pytest command)."""
     try:
         config = configparser.ConfigParser()
@@ -123,7 +123,7 @@ def _parse_tox_addopts(file_path: str) -> str | None:
     return None
 
 
-def _parse_ini_addopts(file_path: str) -> str | None:
+def _parse_ini_addopts(file_path: Path) -> str | None:
     """Extracts addopts from pytest.ini or setup.cfg."""
     config = configparser.ConfigParser()
     try:
@@ -143,7 +143,7 @@ def _parse_ini_addopts(file_path: str) -> str | None:
     return None
 
 
-def _extract_paths_from_addopts(addopts: str, project_path: str) -> PytestPaths:
+def _extract_paths_from_addopts(addopts: str, project_path: Path) -> PytestPaths:
     """Extracts paths from --junitxml= and --json-report-file= from the addopts string."""
 
     def _resolve(raw: str) -> Path:

@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from pathlib import Path
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -121,7 +122,8 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
 
     elif skipped is not None:
         outcome = "skipped"
-        message = skipped.text or skipped.get("message", "")
+        skip_text = skipped.text or ""
+        message = skip_text or skipped.get("message", "")
 
         return TestCaseResult(
             nodeid=nodeid,
@@ -144,7 +146,7 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
 
 
 def parse_junit_xml(
-    file_path: str, source: SourceKind = SourceKind.JUNITXML
+    file_path: Path, source: SourceKind = SourceKind.JUNITXML
 ) -> TestRun:
     """Parses a JUnit XML file into a TestRun object."""
     try:
@@ -187,7 +189,7 @@ def parse_junit_xml(
 
 
 def parse_junit_xml_safe(
-    file_path: str, source: SourceKind = SourceKind.JUNITXML
+    file_path: Path, source: SourceKind = SourceKind.JUNITXML
 ) -> TestRun | None:
     """Safe version of parse_junit_xml that does not raise an exception."""
     try:
