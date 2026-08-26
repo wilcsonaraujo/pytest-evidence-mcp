@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="2" skipped="0" tests="4" time="0.033" timestamp="2026-08-26T14:35:30.183166-03:00" hostname="claude"><testcase classname="tests.test_sample" name="test_passes" time="0.001" /><testcase classname="tests.test_sample" name="test_assert_fails" time="0.001"><failure message="assert 500 == 201">def test_assert_fails():
+        logging.getLogger().warning("about to fail")
+        print("some captured stdout")
+&gt;       assert 500 == 201
+E       assert 500 == 201
+
+tests/test_sample.py:17: AssertionError</failure></testcase><testcase classname="tests.test_sample" name="test_raises" time="0.000"><failure message="ValueError: something went wrong">def test_raises():
+&gt;       raise ValueError("something went wrong")
+E       ValueError: something went wrong
+
+tests/test_sample.py:21: ValueError</failure></testcase><testcase classname="tests.test_sample" name="test_setup_error" time="0.000"><error message="failed on setup with &quot;RuntimeError: fixture setup blew up&quot;">@pytest.fixture
+    def broken_fixture():
+&gt;       raise RuntimeError("fixture setup blew up")
+E       RuntimeError: fixture setup blew up
+
+tests/test_sample.py:7: RuntimeError</error></testcase></testsuite></testsuites>
