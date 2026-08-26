@@ -18,6 +18,8 @@ dependencies = [
 dev = [
     "mcp[cli]>=2.0.0",
     "pytest>=8.0.0",
+    "mypy>=1.13.0",
+    "ruff>=0.7.0",
 ]
 
 [build-system]

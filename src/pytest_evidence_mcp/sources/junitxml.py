@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -56,6 +57,8 @@ def _parse_timestamp(timestamp: str | None) -> datetime | None:
 
 def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     """Parses a <testcase> element into a TestCaseResult."""
+    outcome: Literal["passed", "failed", "error", "skipped"]
+    
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
 
