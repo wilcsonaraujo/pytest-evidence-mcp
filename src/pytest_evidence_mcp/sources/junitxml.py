@@ -1,22 +1,22 @@
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import Literal
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
     extract_actual_expected_safe,
 )
 from pytest_evidence_mcp.core.models import (
-    SourceKind,
     CapturedOutput,
     FailureDetail,
+    SourceKind,
     TestCaseResult,
     TestRun,
 )
 
 
-def _safe_int(value: Optional[str], default: int = 0) -> int:
+def _safe_int(value: str | None, default: int = 0) -> int:
     """Converts string to int with a safe fallback."""
     if value is None:
         return default
@@ -26,7 +26,7 @@ def _safe_int(value: Optional[str], default: int = 0) -> int:
         return default
 
 
-def _safe_float(value: Optional[str], default: float = 0.0) -> float:
+def _safe_float(value: str | None, default: float = 0.0) -> float:
     """Converts string to float with a safe fallback."""
     if value is None:
         return default
@@ -36,7 +36,7 @@ def _safe_float(value: Optional[str], default: float = 0.0) -> float:
         return default
 
 
-def _parse_timestamp(timestamp: Optional[str]) -> Optional[datetime]:
+def _parse_timestamp(timestamp: str | None) -> datetime | None:
     """Parse JUnit XML timestamp to datetime.
 
     Real pytest output includes a UTC offset (e.g. '...T14:35:30.18-03:00'),
@@ -55,8 +55,10 @@ def _parse_timestamp(timestamp: Optional[str]) -> Optional[datetime]:
     return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
 
 
-def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
+def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     """Parses a <testcase> element into a TestCaseResult."""
+    outcome: Literal["passed", "failed", "error", "skipped"]
+    
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
 
@@ -123,7 +125,8 @@ def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
 
     elif skipped is not None:
         outcome = "skipped"
-        message = skipped.text or skipped.get("message", "")
+        skip_text = skipped.text or ""
+        message = skip_text or skipped.get("message", "")
 
         return TestCaseResult(
             nodeid=nodeid,
@@ -146,7 +149,7 @@ def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
 
 
 def parse_junit_xml(
-    file_path: str, source: SourceKind = SourceKind.JUNITXML
+    file_path: Path, source: SourceKind = SourceKind.JUNITXML
 ) -> TestRun:
     """Parses a JUnit XML file into a TestRun object."""
     try:
@@ -189,10 +192,10 @@ def parse_junit_xml(
 
 
 def parse_junit_xml_safe(
-    file_path: str, source: SourceKind = SourceKind.JUNITXML
-) -> Optional[TestRun]:
+    file_path: Path, source: SourceKind = SourceKind.JUNITXML
+) -> TestRun | None:
     """Safe version of parse_junit_xml that does not raise an exception."""
     try:
         return parse_junit_xml(file_path, source)
-    except Exception:
+    except (OSError, ValueError):
         return None

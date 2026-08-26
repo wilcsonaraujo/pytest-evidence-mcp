@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -22,7 +22,7 @@ def _extract_name_from_nodeid(nodeid: str) -> str:
     return parts[-1] if parts else nodeid
 
 
-def _flatten_log_records(log_data: Optional[List[Dict[str, Any]]]) -> Optional[str]:
+def _flatten_log_records(log_data: list[dict[str, Any]] | None) -> str | None:
     """Flattens a list of LogRecords into text."""
     if not log_data:
         return None
@@ -43,8 +43,13 @@ def _flatten_log_records(log_data: Optional[List[Dict[str, Any]]]) -> Optional[s
     return "\n".join(lines) if lines else None
 
 
-def _parse_timestamp(timestamp: Optional[float]) -> Optional[datetime]:
-    """Parse timestamp from JSON report to datetime."""
+def _parse_timestamp(timestamp: float | None) -> datetime | None:
+    """Parse timestamp from JSON report to datetime.
+    
+    Naive on purpose (sem tz=) para casar com junitxml.py's _parse_timestamp -
+    resolver.py faz `datetime.now() - generated_at`, e misturar aware/naive
+    ali derruba com TypeError.
+    """
     if not timestamp:
         return None
 
@@ -52,12 +57,12 @@ def _parse_timestamp(timestamp: Optional[float]) -> Optional[datetime]:
         return None
 
     try:
-        return datetime.fromtimestamp(timestamp)
-    except (TypeError, ValueError, OSError) as e:
+        return datetime.fromtimestamp(timestamp) # noqa: DTZ006 - naive by design, look docstring
+    except (TypeError, ValueError, OSError):
         return None
 
 
-def _parse_test_case(test_data: Dict[str, Any]) -> Optional[TestCaseResult]:
+def _parse_test_case(test_data: dict[str, Any]) -> TestCaseResult | None:
     """Parses a test from the JSON report into a TestCaseResult."""
     nodeid = test_data.get("nodeid", "unknown")
     name = _extract_name_from_nodeid(nodeid)
@@ -150,9 +155,9 @@ def parse_json_report(
 
 def parse_json_report_safe(
     file_path: Path, source: SourceKind = SourceKind.JSON_REPORT
-) -> Optional[TestRun]:
+) -> TestRun | None:
     """Safe version of parse_json_report that does not raise an exception"""
     try:
         return parse_json_report(file_path, source)
-    except Exception as e:
+    except (OSError, ValueError):
         return None

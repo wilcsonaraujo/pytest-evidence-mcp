@@ -22,10 +22,12 @@ async def session():
     params = StdioServerParameters(
         command=sys.executable, args=["-m", "pytest_evidence_mcp"]
     )
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            yield session
+    async with (
+        stdio_client(params) as (read, write),
+        ClientSession(read, write) as session,
+    ):
+        await session.initialize()
+        yield session
 
 
 @pytest.mark.anyio

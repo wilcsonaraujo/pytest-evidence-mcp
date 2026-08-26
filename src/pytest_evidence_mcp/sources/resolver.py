@@ -1,27 +1,27 @@
 import logging
-from pathlib import Path
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from pathlib import Path
+from typing import Any
 
+from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
+from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources.config import (
     get_config_paths,
-    get_default_junit_path,
     get_default_json_report_path,
+    get_default_junit_path,
 )
 from pytest_evidence_mcp.sources.json_report import parse_json_report
 from pytest_evidence_mcp.sources.junitxml import parse_junit_xml
 from pytest_evidence_mcp.sources.runner import run_pytest
-from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
-from pytest_evidence_mcp.core.models import SourceKind, TestRun
 
 logger = logging.getLogger(__name__)
 
 
-def _calculate_age(generated_at: Optional[datetime]) -> Optional[float]:
+def _calculate_age(generated_at: datetime | None) -> float | None:
     """Calcula a idade do relatório em segundos."""
     if generated_at is None:
         return None
-    now = datetime.now()
+    now = datetime.now() # noqa: DTZ005 - naive by design, generated_at is naive as well
     return (now - generated_at).total_seconds()
 
 
@@ -40,7 +40,7 @@ def _get_declared_paths(project_path: Path):
         return None
 
 
-def _resolve_json_report(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
+def _resolve_json_report(project_path: Path) -> tuple[TestRun, dict[str, Any]]:
     """Branch 1: Attempts to load .report.json."""
     config_paths = _get_declared_paths(project_path)
     json_report_path = config_paths.json_report_path if config_paths else None
@@ -67,7 +67,7 @@ def _resolve_json_report(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
                     "resolved_path": json_report_path,
                 }
                 return test_run, metadata
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.warning(f"Failed to parse declared JSON report: {e}")
 
     default_json_path = project_path / get_default_json_report_path()
@@ -90,13 +90,13 @@ def _resolve_json_report(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
                 "resolved_path": default_json_path,
             }
             return test_run, metadata
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"Failed to parse default JSON report: {e}")
 
     raise ResolverError("JSON report not found or invalid")
 
 
-def _resolve_junit_xml(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
+def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, dict[str, Any]]:
     """Branch 2: Attempts to load junit.xml."""
     config_paths = _get_declared_paths(project_path)
     junit_path = config_paths.junitxml_path if config_paths else None
@@ -120,7 +120,7 @@ def _resolve_junit_xml(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
                     "resolved_path": junit_path,
                 }
                 return test_run, metadata
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.warning(f"Failed to parse declared JUnit XML: {e}")
 
     default_junit_path = project_path / get_default_junit_path()
@@ -142,15 +142,15 @@ def _resolve_junit_xml(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
                 "resolved_path": default_junit_path,
             }
             return test_run, metadata
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"Failed to parse default JUnit XML: {e}")
 
     raise ResolverError("JUnit XML not found or invalid")
 
 
 def _resolve_subprocess(
-    project_path: Path, explicit_interpreter: Optional[str], timeout: int
-) -> Tuple[TestRun, Dict[str, Any]]:
+    project_path: Path, explicit_interpreter: str | None, timeout: int
+) -> tuple[TestRun, dict[str, Any]]:
     """Branch 3: Runs pytest via subprocess.
 
     No try/except here on purpose: run_pytest already raises specific,
@@ -177,10 +177,10 @@ def _resolve_subprocess(
 
 def resolve_test_run(
     project_path: str,
-    explicit_interpreter: Optional[str] = None,
+    explicit_interpreter: str | None = None,
     timeout: int = 60,
-    force: Optional[str] = None,
-) -> Tuple[TestRun, Dict[str, Any]]:
+    force: str | None = None,
+) -> tuple[TestRun, dict[str, Any]]:
     """
     Resolves a TestRun following the priority chain:
         1. .report.json (declared or by convention)
@@ -200,35 +200,35 @@ def resolve_test_run(
         ResolverError: invalid force=, or that forced source wasn't found.
         EvidenceError: branch 3 failed - the specific subclass says why.
     """
-    project_path = Path(project_path)
-    logger.info(f"Resolving test run for: {project_path}")
+    project_root = Path(project_path)
+    logger.info(f"Resolving test run for: {project_root}")
 
     if force:
         logger.debug(f"Force mode: {force}")
         if force == "json":
-            return _resolve_json_report(project_path)
+            return _resolve_json_report(project_root)
         elif force == "junit":
-            return _resolve_junit_xml(project_path)
+            return _resolve_junit_xml(project_root)
         elif force == "subprocess":
-            return _resolve_subprocess(project_path, explicit_interpreter, timeout)
+            return _resolve_subprocess(project_root, explicit_interpreter, timeout)
         else:
             raise ResolverError(f"Invalid force value: {force}")
 
     # 1. Try JSON report
     try:
         logger.debug("Attempting JSON report (Ramo 1)")
-        return _resolve_json_report(project_path)
+        return _resolve_json_report(project_root)
     except ResolverError as e:
         logger.debug(f"JSON report unavailable: {e}")
 
     # 2. Try JUnit XML
     try:
         logger.debug("Attempting JUnit XML (Ramo 2)")
-        return _resolve_junit_xml(project_path)
+        return _resolve_junit_xml(project_root)
     except ResolverError as e:
         logger.debug(f"JUnit XML unavailable: {e}")
 
     # 3. Execute pytest - last resort, no try/except here on purpose (see
     # _resolve_subprocess's docstring).
     logger.debug("Attempting subprocess (Ramo 3)")
-    return _resolve_subprocess(project_path, explicit_interpreter, timeout)
+    return _resolve_subprocess(project_root, explicit_interpreter, timeout)

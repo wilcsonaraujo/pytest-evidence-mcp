@@ -1,6 +1,8 @@
 def test_passes():
-    assert 1 == 1
+    value = 1
+    assert value == 1
 
 
 def test_fails():
-    assert 1 == 2
+    value = 1
+    assert value == 2

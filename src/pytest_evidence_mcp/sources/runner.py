@@ -4,7 +4,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pytest_evidence_mcp.core.errors import (
     InterpreterNotFoundError,
@@ -19,13 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_interpreter(
-    project_path: Path, explicit: Optional[Path] = None
-) -> Optional[Path]:
+    project_path: Path, explicit: Path | None = None
+) -> Path | None:
     """The Python interpreter resolves it in the defined order."""
-    if explicit:
-        if explicit.exists() and explicit.is_file():
-            logger.debug(f"Using explicit interpreter: {explicit}")
-            return explicit
+
+    if explicit and explicit.exists() and explicit.is_file():
+        logger.debug(f"Using explicit interpreter: {explicit}")
+        return explicit
 
     venv_bin = project_path / ".venv" / "bin" / "python"
     if venv_bin.exists() and venv_bin.is_file():
@@ -57,14 +56,15 @@ def _check_pytest_installed(python_path: Path) -> bool:
             capture_output=True,
             text=True,
             timeout=10,
+            check=False,
         )
         return result.returncode == 0
-    except Exception as e:
+    except (OSError, subprocess.SubprocessError) as e:
         logger.debug(f"Failed to check pytest installation: {e}")
         return False
 
 
-def _build_clean_env() -> Dict[str, str]:
+def _build_clean_env() -> dict[str, str]:
     """
     Environment for the pytest subprocess: a copy of this process's own
     environment, with only PYTHONPATH/VIRTUAL_ENV/PYTHONHOME stripped.
@@ -90,9 +90,9 @@ def _get_clean_path() -> str:
 
 def run_pytest(
     project_path: Path,
-    interpreter: Optional[Path] = None,
+    interpreter: Path | None = None,
     timeout: int = 60,
-    extra_args: Optional[List[str]] = None,
+    extra_args: list[str] | None = None,
 ) -> TestRun:
     """
     Runs pytest on the target project.
@@ -142,6 +142,7 @@ def run_pytest(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                check=False,
             )
         except subprocess.TimeoutExpired as e:
             logger.error(f"Pytest timeout after {timeout}s")

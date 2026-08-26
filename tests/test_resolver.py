@@ -52,7 +52,7 @@ def test_respects_declared_path_over_convention(tmp_path):
         '[tool.pytest.ini_options]\naddopts = "--json-report-file=reports/custom.json"\n'
     )
 
-    test_run, metadata = resolver.resolve_test_run(str(tmp_path))
+    _test_run, metadata = resolver.resolve_test_run(str(tmp_path))
 
     assert metadata["source"] == "json_report"
     assert metadata["resolved_path"] == tmp_path / "reports" / "custom.json"

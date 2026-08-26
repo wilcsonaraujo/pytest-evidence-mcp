@@ -1,13 +1,13 @@
-import re
 import configparser
+import re
 
 try:
     import tomllib
 except ImportError:  # Python 3.10 doesn't ship tomllib
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 
 from pathlib import Path
-from typing import Optional, NamedTuple, List, Tuple
+from typing import NamedTuple
 
 from pytest_evidence_mcp.core.errors import ConfigParseError
 
@@ -15,15 +15,15 @@ from pytest_evidence_mcp.core.errors import ConfigParseError
 class PytestPaths(NamedTuple):
     """Extracted paths from pytest configuration."""
 
-    junitxml_path: Optional[Path]
-    json_report_path: Optional[Path]
+    junitxml_path: Path | None
+    json_report_path: Path | None
 
 
 DEFAULT_JUNIT_PATH = Path("junit.xml")
 DEFAULT_JSON_REPORT_PATH = Path(".report.json")
 
 
-def parse_pytest_config(project_path: Optional[Path] = None) -> PytestPaths:
+def parse_pytest_config(project_path: Path | None = None) -> PytestPaths:
     """
     Parses pytest configurations from project files.
     Search order:
@@ -42,7 +42,7 @@ def parse_pytest_config(project_path: Optional[Path] = None) -> PytestPaths:
     """
     project_path = project_path or Path.cwd()
 
-    config_files: List[Tuple[str, Path]] = [
+    config_files: list[tuple[str, Path]] = [
         ("pyproject.toml", project_path / "pyproject.toml"),
         ("pytest.ini", project_path / "pytest.ini"),
         ("tox.ini", project_path / "tox.ini"),
@@ -59,7 +59,7 @@ def parse_pytest_config(project_path: Optional[Path] = None) -> PytestPaths:
     return PytestPaths(None, None)
 
 
-def _parse_addopts_from_file(file_path: Path, parser_type: str) -> Optional[str]:
+def _parse_addopts_from_file(file_path: Path, parser_type: str) -> str | None:
     """Extracts addopts from a configuration file."""
     if parser_type == "pyproject.toml":
         return _parse_pyproject_addopts(file_path)
@@ -69,7 +69,7 @@ def _parse_addopts_from_file(file_path: Path, parser_type: str) -> Optional[str]
         return _parse_ini_addopts(file_path)
 
 
-def _parse_pyproject_addopts(file_path: str) -> Optional[str]:
+def _parse_pyproject_addopts(file_path: Path) -> str | None:
     """Extracts addopts from pyproject.toml."""
     try:
         with open(file_path, "rb") as file:
@@ -93,7 +93,7 @@ def _parse_pyproject_addopts(file_path: str) -> Optional[str]:
     return None
 
 
-def _parse_tox_addopts(file_path: str) -> Optional[str]:
+def _parse_tox_addopts(file_path: Path) -> str | None:
     """Extracts options from tox.ini (pytest command)."""
     try:
         config = configparser.ConfigParser()
@@ -123,7 +123,7 @@ def _parse_tox_addopts(file_path: str) -> Optional[str]:
     return None
 
 
-def _parse_ini_addopts(file_path: str) -> Optional[str]:
+def _parse_ini_addopts(file_path: Path) -> str | None:
     """Extracts addopts from pytest.ini or setup.cfg."""
     config = configparser.ConfigParser()
     try:
@@ -143,7 +143,7 @@ def _parse_ini_addopts(file_path: str) -> Optional[str]:
     return None
 
 
-def _extract_paths_from_addopts(addopts: str, project_path: str) -> PytestPaths:
+def _extract_paths_from_addopts(addopts: str, project_path: Path) -> PytestPaths:
     """Extracts paths from --junitxml= and --json-report-file= from the addopts string."""
 
     def _resolve(raw: str) -> Path:
@@ -166,7 +166,7 @@ def _extract_paths_from_addopts(addopts: str, project_path: str) -> PytestPaths:
     return PytestPaths(junitxml_path, json_report_path)
 
 
-def get_config_paths(project_path: Optional[Path] = None) -> PytestPaths:
+def get_config_paths(project_path: Path | None = None) -> PytestPaths:
     """Retrieves the configured paths for reports."""
     return parse_pytest_config(project_path)
 
