@@ -28,7 +28,7 @@ def extract_actual_expected_safe(
     """Same as extract_expected_actual, but never raises."""
     try:
         return extract_actual_expected(message, error_type)
-    except Exception:
+    except (OSError, ValueError):
         return None, None
 
 

@@ -58,7 +58,7 @@ def _parse_timestamp(timestamp: float | None) -> datetime | None:
 
     try:
         return datetime.fromtimestamp(timestamp) # noqa: DTZ006 - naive by design, look docstring
-    except (TypeError, ValueError, OSError) as e:
+    except (TypeError, ValueError, OSError):
         return None
 
 
@@ -159,5 +159,5 @@ def parse_json_report_safe(
     """Safe version of parse_json_report that does not raise an exception"""
     try:
         return parse_json_report(file_path, source)
-    except (OSError, ValueError) as e:
+    except (OSError, ValueError):
         return None

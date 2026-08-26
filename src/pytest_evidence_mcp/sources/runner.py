@@ -21,10 +21,10 @@ def _resolve_interpreter(
     project_path: Path, explicit: Path | None = None
 ) -> Path | None:
     """The Python interpreter resolves it in the defined order."""
-    if explicit:
-        if explicit and explicit.exists() and explicit.is_file():
-            logger.debug(f"Using explicit interpreter: {explicit}")
-            return explicit
+
+    if explicit and explicit.exists() and explicit.is_file():
+        logger.debug(f"Using explicit interpreter: {explicit}")
+        return explicit
 
     venv_bin = project_path / ".venv" / "bin" / "python"
     if venv_bin.exists() and venv_bin.is_file():
