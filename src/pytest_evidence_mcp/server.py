@@ -2,7 +2,7 @@ from mcp.server import MCPServer
 
 from pytest_evidence_mcp.core.errors import EvidenceError
 
-mcp = MCPServer("pytest-evidence-mcp")
+mcp = MCPServer("pytest-evidence-mcp", version="0.1.0")
 
 
 @mcp.tool()
