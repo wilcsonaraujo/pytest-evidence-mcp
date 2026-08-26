@@ -1,5 +1,4 @@
 import re
-from typing import tuple
 
 _ASSERT_EQ = re.compile(r"^assert\s+(.+?)\s*==\s*(.+)$", re.MULTILINE)
 

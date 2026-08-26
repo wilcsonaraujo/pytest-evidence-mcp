@@ -7,7 +7,7 @@ except ImportError:  # Python 3.10 doesn't ship tomllib
     import tomli as tomllib
 
 from pathlib import Path
-from typing import List, NamedTuple, tuple
+from typing import NamedTuple
 
 from pytest_evidence_mcp.core.errors import ConfigParseError
 
@@ -42,7 +42,7 @@ def parse_pytest_config(project_path: Path | None = None) -> PytestPaths:
     """
     project_path = project_path or Path.cwd()
 
-    config_files: List[tuple[str, Path]] = [
+    config_files: list[tuple[str, Path]] = [
         ("pyproject.toml", project_path / "pyproject.toml"),
         ("pytest.ini", project_path / "pytest.ini"),
         ("tox.ini", project_path / "tox.ini"),

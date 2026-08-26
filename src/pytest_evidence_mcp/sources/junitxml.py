@@ -192,5 +192,5 @@ def parse_junit_xml_safe(
     """Safe version of parse_junit_xml that does not raise an exception."""
     try:
         return parse_junit_xml(file_path, source)
-    except Exception:
+    except (OSError, ValueError):
         return None

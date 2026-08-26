@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, tuple
+from typing import Any
 
 from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
@@ -21,7 +21,7 @@ def _calculate_age(generated_at: datetime | None) -> float | None:
     """Calcula a idade do relatório em segundos."""
     if generated_at is None:
         return None
-    now = datetime.now()
+    now = datetime.now() # noqa: DTZ005 - naive by design, generated_at is naive as well
     return (now - generated_at).total_seconds()
 
 
@@ -40,7 +40,7 @@ def _get_declared_paths(project_path: Path):
         return None
 
 
-def _resolve_json_report(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
+def _resolve_json_report(project_path: Path) -> tuple[TestRun, dict[str, Any]]:
     """Branch 1: Attempts to load .report.json."""
     config_paths = _get_declared_paths(project_path)
     json_report_path = config_paths.json_report_path if config_paths else None
@@ -67,7 +67,7 @@ def _resolve_json_report(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
                     "resolved_path": json_report_path,
                 }
                 return test_run, metadata
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.warning(f"Failed to parse declared JSON report: {e}")
 
     default_json_path = project_path / get_default_json_report_path()
@@ -90,13 +90,13 @@ def _resolve_json_report(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
                 "resolved_path": default_json_path,
             }
             return test_run, metadata
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"Failed to parse default JSON report: {e}")
 
     raise ResolverError("JSON report not found or invalid")
 
 
-def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
+def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, dict[str, Any]]:
     """Branch 2: Attempts to load junit.xml."""
     config_paths = _get_declared_paths(project_path)
     junit_path = config_paths.junitxml_path if config_paths else None
@@ -120,7 +120,7 @@ def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
                     "resolved_path": junit_path,
                 }
                 return test_run, metadata
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.warning(f"Failed to parse declared JUnit XML: {e}")
 
     default_junit_path = project_path / get_default_junit_path()
@@ -142,7 +142,7 @@ def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
                 "resolved_path": default_junit_path,
             }
             return test_run, metadata
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.warning(f"Failed to parse default JUnit XML: {e}")
 
     raise ResolverError("JUnit XML not found or invalid")
@@ -150,7 +150,7 @@ def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
 
 def _resolve_subprocess(
     project_path: Path, explicit_interpreter: str | None, timeout: int
-) -> tuple[TestRun, Dict[str, Any]]:
+) -> tuple[TestRun, dict[str, Any]]:
     """Branch 3: Runs pytest via subprocess.
 
     No try/except here on purpose: run_pytest already raises specific,
@@ -180,7 +180,7 @@ def resolve_test_run(
     explicit_interpreter: str | None = None,
     timeout: int = 60,
     force: str | None = None,
-) -> tuple[TestRun, Dict[str, Any]]:
+) -> tuple[TestRun, dict[str, Any]]:
     """
     Resolves a TestRun following the priority chain:
         1. .report.json (declared or by convention)

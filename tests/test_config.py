@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from pytest_evidence_mcp.core.errors import ConfigParseError

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -44,7 +44,12 @@ def _flatten_log_records(log_data: list[dict[str, Any]] | None) -> str | None:
 
 
 def _parse_timestamp(timestamp: float | None) -> datetime | None:
-    """Parse timestamp from JSON report to datetime."""
+    """Parse timestamp from JSON report to datetime.
+    
+    Naive on purpose (sem tz=) para casar com junitxml.py's _parse_timestamp -
+    resolver.py faz `datetime.now() - generated_at`, e misturar aware/naive
+    ali derruba com TypeError.
+    """
     if not timestamp:
         return None
 
@@ -52,12 +57,12 @@ def _parse_timestamp(timestamp: float | None) -> datetime | None:
         return None
 
     try:
-        return datetime.fromtimestamp(timestamp)
+        return datetime.fromtimestamp(timestamp) # noqa: DTZ006 - naive by design, look docstring
     except (TypeError, ValueError, OSError) as e:
         return None
 
 
-def _parse_test_case(test_data: Dict[str, Any]) -> TestCaseResult | None:
+def _parse_test_case(test_data: dict[str, Any]) -> TestCaseResult | None:
     """Parses a test from the JSON report into a TestCaseResult."""
     nodeid = test_data.get("nodeid", "unknown")
     name = _extract_name_from_nodeid(nodeid)
@@ -154,5 +159,5 @@ def parse_json_report_safe(
     """Safe version of parse_json_report that does not raise an exception"""
     try:
         return parse_json_report(file_path, source)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         return None
