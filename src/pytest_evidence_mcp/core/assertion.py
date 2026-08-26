@@ -1,12 +1,12 @@
 import re
-from typing import Optional, Tuple
+from typing import tuple
 
 _ASSERT_EQ = re.compile(r"^assert\s+(.+?)\s*==\s*(.+)$", re.MULTILINE)
 
 
 def extract_actual_expected(
-    message: str, error_type: Optional[str] = None
-) -> Tuple[Optional[str], Optional[str]]:
+    message: str, error_type: str | None = None
+) -> tuple[str | None, str | None]:
     """Extract (expected, actual) from an AssertionError message, when safe."""
     if error_type != "AssertionError" or not message:
         return None, None
@@ -24,8 +24,8 @@ def extract_actual_expected(
 
 
 def extract_actual_expected_safe(
-    message: str, error_type: Optional[str] = None
-) -> Tuple[Optional[str], Optional[str]]:
+    message: str, error_type: str | None = None
+) -> tuple[str | None, str | None]:
     """Same as extract_expected_actual, but never raises."""
     try:
         return extract_actual_expected(message, error_type)
@@ -33,7 +33,7 @@ def extract_actual_expected_safe(
         return None, None
 
 
-def derive_error_type_from_traceback(traceback_text: Optional[str]) -> Optional[str]:
+def derive_error_type_from_traceback(traceback_text: str | None) -> str | None:
     """Derive the exception class name from a pytest traceback block."""
     if not traceback_text:
         return None

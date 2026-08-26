@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, tuple
 
 from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
@@ -17,7 +17,7 @@ from pytest_evidence_mcp.sources.runner import run_pytest
 logger = logging.getLogger(__name__)
 
 
-def _calculate_age(generated_at: Optional[datetime]) -> Optional[float]:
+def _calculate_age(generated_at: datetime | None) -> float | None:
     """Calcula a idade do relatório em segundos."""
     if generated_at is None:
         return None
@@ -40,7 +40,7 @@ def _get_declared_paths(project_path: Path):
         return None
 
 
-def _resolve_json_report(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
+def _resolve_json_report(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
     """Branch 1: Attempts to load .report.json."""
     config_paths = _get_declared_paths(project_path)
     json_report_path = config_paths.json_report_path if config_paths else None
@@ -96,7 +96,7 @@ def _resolve_json_report(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
     raise ResolverError("JSON report not found or invalid")
 
 
-def _resolve_junit_xml(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
+def _resolve_junit_xml(project_path: Path) -> tuple[TestRun, Dict[str, Any]]:
     """Branch 2: Attempts to load junit.xml."""
     config_paths = _get_declared_paths(project_path)
     junit_path = config_paths.junitxml_path if config_paths else None
@@ -149,8 +149,8 @@ def _resolve_junit_xml(project_path: Path) -> Tuple[TestRun, Dict[str, Any]]:
 
 
 def _resolve_subprocess(
-    project_path: Path, explicit_interpreter: Optional[str], timeout: int
-) -> Tuple[TestRun, Dict[str, Any]]:
+    project_path: Path, explicit_interpreter: str | None, timeout: int
+) -> tuple[TestRun, Dict[str, Any]]:
     """Branch 3: Runs pytest via subprocess.
 
     No try/except here on purpose: run_pytest already raises specific,
@@ -177,10 +177,10 @@ def _resolve_subprocess(
 
 def resolve_test_run(
     project_path: str,
-    explicit_interpreter: Optional[str] = None,
+    explicit_interpreter: str | None = None,
     timeout: int = 60,
-    force: Optional[str] = None,
-) -> Tuple[TestRun, Dict[str, Any]]:
+    force: str | None = None,
+) -> tuple[TestRun, Dict[str, Any]]:
     """
     Resolves a TestRun following the priority chain:
         1. .report.json (declared or by convention)

@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pytest_evidence_mcp.core.errors import (
     InterpreterNotFoundError,
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_interpreter(
-    project_path: Path, explicit: Optional[Path] = None
-) -> Optional[Path]:
+    project_path: Path, explicit: Path | None = None
+) -> Path | None:
     """The Python interpreter resolves it in the defined order."""
     if explicit:
         if explicit.exists() and explicit.is_file():
@@ -90,9 +90,9 @@ def _get_clean_path() -> str:
 
 def run_pytest(
     project_path: Path,
-    interpreter: Optional[Path] = None,
+    interpreter: Path | None = None,
     timeout: int = 60,
-    extra_args: Optional[List[str]] = None,
+    extra_args: List[str] | None = None,
 ) -> TestRun:
     """
     Runs pytest on the target project.

@@ -1,7 +1,5 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -16,7 +14,7 @@ from pytest_evidence_mcp.core.models import (
 )
 
 
-def _safe_int(value: Optional[str], default: int = 0) -> int:
+def _safe_int(value: str | None, default: int = 0) -> int:
     """Converts string to int with a safe fallback."""
     if value is None:
         return default
@@ -26,7 +24,7 @@ def _safe_int(value: Optional[str], default: int = 0) -> int:
         return default
 
 
-def _safe_float(value: Optional[str], default: float = 0.0) -> float:
+def _safe_float(value: str | None, default: float = 0.0) -> float:
     """Converts string to float with a safe fallback."""
     if value is None:
         return default
@@ -36,7 +34,7 @@ def _safe_float(value: Optional[str], default: float = 0.0) -> float:
         return default
 
 
-def _parse_timestamp(timestamp: Optional[str]) -> Optional[datetime]:
+def _parse_timestamp(timestamp: str | None) -> datetime | None:
     """Parse JUnit XML timestamp to datetime.
 
     Real pytest output includes a UTC offset (e.g. '...T14:35:30.18-03:00'),
@@ -55,7 +53,7 @@ def _parse_timestamp(timestamp: Optional[str]) -> Optional[datetime]:
     return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
 
 
-def _parse_testcase(element: ET.Element) -> Optional[TestCaseResult]:
+def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     """Parses a <testcase> element into a TestCaseResult."""
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
@@ -190,7 +188,7 @@ def parse_junit_xml(
 
 def parse_junit_xml_safe(
     file_path: str, source: SourceKind = SourceKind.JUNITXML
-) -> Optional[TestRun]:
+) -> TestRun | None:
     """Safe version of parse_junit_xml that does not raise an exception."""
     try:
         return parse_junit_xml(file_path, source)
