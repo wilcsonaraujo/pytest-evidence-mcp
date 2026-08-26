@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pytest_evidence_mcp.core.errors import (
     InterpreterNotFoundError,
+    NoTestsCollectedError,
     PytestExecutionError,
     PytestNotFoundError,
     PytestTimeoutError,
@@ -149,6 +150,11 @@ def run_pytest(
             raise PytestTimeoutError(
                 f"Pytest execution exceeded {timeout} seconds timeout"
             ) from e
+
+        if result.returncode == 5:
+            raise NoTestsCollectedError(
+                f"No tests were collected by pytest in path {project_path}"
+            )
 
         if not temp_file.exists():
             error_msg = result.stderr or result.stdout or "Unknown error"

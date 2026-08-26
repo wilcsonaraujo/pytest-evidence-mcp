@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from pytest_evidence_mcp.core.errors import (
+    NoTestsCollectedError,
     PytestExecutionError,
     PytestNotFoundError,
     PytestTimeoutError,
@@ -17,6 +18,7 @@ from pytest_evidence_mcp.sources.runner import (
 )
 
 SAMPLE_PROJECT = Path(__file__).parent / "fixtures" / "sample_project"
+EMPTY_PROJECT = Path(__file__).parent / "fixtures" / "empty_project"
 
 
 # --- _resolve_interpreter: pure filesystem logic, no subprocess ------------
@@ -44,9 +46,7 @@ def test_falls_back_to_server_interpreter_with_warning(tmp_path, caplog):
         result = _resolve_interpreter(tmp_path)
 
     assert result is not None
-    assert any(
-        "falling back" in record.message.lower() for record in caplog.records
-    )
+    assert any("falling back" in record.message.lower() for record in caplog.records)
 
 
 # --- _build_clean_env: pure function, no I/O beyond os.environ -------------
@@ -127,3 +127,8 @@ def test_temp_dir_is_cleaned_up_after_real_run(tmp_path):
     after = set(Path(tempfile.gettempdir()).glob("pytest_evidence_*"))
 
     assert after == before  # nothing new left behind
+
+
+def test_real_run_against_empty_project_raises_no_tests_collected():
+    with pytest.raises(NoTestsCollectedError):
+        run_pytest(EMPTY_PROJECT, timeout=30)
