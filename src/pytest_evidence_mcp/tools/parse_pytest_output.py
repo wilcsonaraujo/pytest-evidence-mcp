@@ -1,7 +1,16 @@
-from pytest_evidence_mcp.core.pytest_output_parser import parse_raw_text
+from typing import Literal
+
+from typing_extensions import TypedDict
+
+from pytest_evidence_mcp.core.pytest_output_parser import ParsedFailure, parse_raw_text
 
 
-def parse_pytest_output(raw_text: str):
+class ParsePytestOutputOutput(TypedDict):
+    confidence: Literal["low"]
+    failures: list[ParsedFailure]
+
+
+def parse_pytest_output(raw_text: str) -> ParsePytestOutputOutput:
     """Extract failure evidence from raw pytest terminal output.
 
     Last-resort fallback for when pytest cannot be run again and the output
@@ -9,7 +18,4 @@ def parse_pytest_output(raw_text: str):
     """
     failures = parse_raw_text(raw_text)
 
-    return {
-        "confidence": "low",
-        "failures": failures
-    }
+    return {"confidence": "low", "failures": failures}

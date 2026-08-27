@@ -1,5 +1,7 @@
 import re
-from typing import Any
+from typing import Literal
+
+from typing_extensions import TypedDict
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -17,19 +19,33 @@ _ERROR_AT_PREFIX = re.compile(r"^ERROR at (setup|teardown) of\s+")
 _MESSAGE_LINE = re.compile(r"^E\s+(.*)$", re.MULTILINE)
 
 
-def parse_raw_text(raw_text: str) -> list[dict[str, Any]]:
+class ParsedFailure(TypedDict):
+    test_name: str
+    outcome: Literal["failed", "error"]
+    error_type: str | None
+    message: str | None
+    traceback: str | None
+    actual: str | None
+    expected: str | None
+    captured_stdout: str | None
+    captured_stderr: str | None
+    captured_log: str | None
+    duration_ms: int | None
+
+
+def parse_raw_text(raw_text: str) -> list[ParsedFailure]:
     """Parses raw pytest terminal output into a list of failure/error dicts.
 
     Covers both the "=== FAILURES ===" and "==== ERRORS ====" sections -
     the latter is where fixture setup/teardown failures show up, under a
     different per-test header ("ERROR at setup of <test>").
     """
-    results: list[dict[str, Any]] = []
+    results: list[ParsedFailure] = []
 
     for section_match in _SECTION_HEADER.finditer(raw_text):
         section_name = section_match.group(1)
         section_body = _slice_section_body(raw_text, section_match.end())
-        outcome = "failed" if section_name == "FAILURES" else "error"
+        outcome: Literal["failed", "error"] = ("failed" if section_name == "FAILURES" else "error")
         results.extend(_parse_section(section_body, outcome))
 
     if not results:
@@ -50,7 +66,7 @@ def _slice_section_body(raw_text: str, start: int) -> str:
     return raw_text[start:end]
 
 
-def _parse_section(section_body: str, outcome: str) -> list[dict[str, Any]]:
+def _parse_section(section_body: str, outcome: Literal["failed", "error"]) -> list[ParsedFailure]:
     matches = list(_TEST_SEPARATOR.finditer(section_body))
     tests = []
 
@@ -70,7 +86,7 @@ def _parse_section(section_body: str, outcome: str) -> list[dict[str, Any]]:
     return tests
 
 
-def _parse_test_chunk(test_name: str, outcome: str, chunk: str) -> dict[str, Any]:
+def _parse_test_chunk(test_name: str, outcome: Literal["failed", "error"], chunk: str) -> ParsedFailure:
     traceback_text, captured = _split_captured_sections(chunk)
 
     error_type = derive_error_type_from_traceback(traceback_text)

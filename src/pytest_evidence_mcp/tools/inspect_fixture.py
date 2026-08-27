@@ -1,10 +1,25 @@
 from pathlib import Path
+from typing import Literal
+
+from typing_extensions import TypedDict
 
 from pytest_evidence_mcp.core.fixture_inspection import inspect
 from pytest_evidence_mcp.sources.fixture_loader import load_fixture
 
 
-def inspect_fixture(path: str):
+class InspectFixtureValid(TypedDict):
+    valid: Literal[True]
+    field_count: int
+    null_fields: list[str]
+    types: dict[str, str]
+
+
+class InspectFixtureInvalid(TypedDict):
+    valid: Literal[False]
+    message: str
+
+
+def inspect_fixture(path: str) -> InspectFixtureValid | InspectFixtureInvalid:
     """Inspect a JSON or YAML fixture file used by a test.
 
     Use to check whether the failure comes from the input data itself.
