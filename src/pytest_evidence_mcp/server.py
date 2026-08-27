@@ -1,8 +1,18 @@
+from collections.abc import Callable
 from functools import partial
 
 from mcp.server import MCPServer
+from mcp.server.mcpserver.prompts import Prompt
 from mcp.server.mcpserver.resources import FunctionResource
 
+from pytest_evidence_mcp.prompts.get_test_failure_prompt import get_test_failure_prompt
+from pytest_evidence_mcp.prompts.inspect_fixture_prompt import inspect_fixture_prompt
+from pytest_evidence_mcp.prompts.list_failed_tests_prompt import (
+    list_failed_tests_prompt,
+)
+from pytest_evidence_mcp.prompts.parse_pytest_output_prompt import (
+    parse_pytest_output_prompt,
+)
 from pytest_evidence_mcp.resources.tools_documentation import build_tool_documentation
 from pytest_evidence_mcp.tools.get_test_failure import get_test_failure
 from pytest_evidence_mcp.tools.inspect_fixture import inspect_fixture
@@ -32,3 +42,13 @@ for tool_name in TOOL_NAMES:
             description=f"Machine-readable contract for the {tool_name} tool.",
         )
     )
+
+PROMPT_FUNCTIONS: list[Callable[..., str]] = [
+    list_failed_tests_prompt,
+    get_test_failure_prompt,
+    inspect_fixture_prompt,
+    parse_pytest_output_prompt,
+]
+
+for prompt_fn in PROMPT_FUNCTIONS:
+    mcp.add_prompt(Prompt.from_function(prompt_fn))
