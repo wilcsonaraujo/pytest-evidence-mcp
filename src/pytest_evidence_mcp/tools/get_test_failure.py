@@ -1,8 +1,21 @@
+from typing_extensions import TypedDict
+
 from pytest_evidence_mcp.core.errors import TestDidNotFailError, TestNotFoundError
 from pytest_evidence_mcp.sources.resolver import resolve_test_run
 
 
-def get_test_failure(test_name: str, path: str):
+class GetTestFailureOutput(TypedDict):
+    error_type: str | None
+    message: str | None
+    traceback: str | None
+    actual: str | None
+    expected: str | None
+    stdout: str | None
+    stderr: str | None
+    log: str | None
+    duration: int | None
+
+def get_test_failure(test_name: str, path: str) -> GetTestFailureOutput:
     """Return the full evidence pytest already collected for one failing test.
 
     Use after list_failed_tests. Delivers the error, the traceback and the
