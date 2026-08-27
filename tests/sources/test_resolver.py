@@ -7,8 +7,8 @@ from pytest_evidence_mcp.core.errors import ResolverError
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources import resolver
 
-FIXTURE_JSON = Path(__file__).parent / "fixtures" / "json_report" / "sample.json"
-FIXTURE_JUNIT = Path(__file__).parent / "fixtures" / "junit" / "sample.xml"
+FIXTURE_JSON = Path(__file__).parent.parent / "fixtures" / "json_report" / "sample.json"
+FIXTURE_JUNIT = Path(__file__).parent.parent / "fixtures" / "junit" / "sample.xml"
 
 
 def _fake_test_run(source: SourceKind) -> TestRun:

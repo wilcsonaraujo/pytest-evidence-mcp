@@ -5,8 +5,8 @@ import pytest
 from pytest_evidence_mcp.core.errors import NoTestsCollectedError
 from pytest_evidence_mcp.tools.list_failed_tests import list_failed_tests
 
-SAMPLE_PROJECT = Path(__file__).parent / "fixtures" / "sample_project"
-EMPTY_PROJECT = Path(__file__).parent / "fixtures" / "empty_project"
+SAMPLE_PROJECT = Path(__file__).parent.parent / "fixtures" / "sample_project"
+EMPTY_PROJECT = Path(__file__).parent.parent / "fixtures" / "empty_project"
 
 
 def test_summarises_a_real_run_with_one_failure():

@@ -17,8 +17,8 @@ from pytest_evidence_mcp.sources.runner import (
     run_pytest,
 )
 
-SAMPLE_PROJECT = Path(__file__).parent / "fixtures" / "sample_project"
-EMPTY_PROJECT = Path(__file__).parent / "fixtures" / "empty_project"
+SAMPLE_PROJECT = Path(__file__).parent.parent / "fixtures" / "sample_project"
+EMPTY_PROJECT = Path(__file__).parent.parent / "fixtures" / "empty_project"
 
 
 # --- _resolve_interpreter: pure filesystem logic, no subprocess ------------
