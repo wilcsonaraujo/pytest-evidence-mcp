@@ -1,0 +1,9 @@
+{
+  "user": {
+    "name": "Alice",
+    "email": null
+  },
+  "tags": ["a", "b"],
+  "empty_list": [],
+  "active": true
+}
