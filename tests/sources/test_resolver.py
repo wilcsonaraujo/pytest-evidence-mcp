@@ -7,8 +7,8 @@ from pytest_evidence_mcp.core.errors import ResolverError
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources import resolver
 
-FIXTURE_JSON = Path(__file__).parent / "fixtures" / "json_report" / "sample.json"
-FIXTURE_JUNIT = Path(__file__).parent / "fixtures" / "junit" / "sample.xml"
+FIXTURE_JSON = Path(__file__).parent.parent / "fixtures" / "json_report" / "sample.json"
+FIXTURE_JUNIT = Path(__file__).parent.parent / "fixtures" / "junit" / "sample.xml"
 
 
 def _fake_test_run(source: SourceKind) -> TestRun:
@@ -98,6 +98,21 @@ def test_subprocess_failure_propagates_unwrapped(tmp_path, monkeypatch):
     monkeypatch.setattr(resolver, "run_pytest", boom)
 
     with pytest.raises(PytestNotFoundError):
+        resolver.resolve_test_run(str(tmp_path))
+
+def test_no_tests_collected_propagates_unwrapped(tmp_path, monkeypatch):
+    """Testing an empty project cannot result in '0 failures'—
+    it must appear as an error that the agent recognizes as
+    distinct from a genuine execution of an empty project.
+    """
+    from pytest_evidence_mcp.core.errors import NoTestsCollectedError
+
+    def boom(**kwargs):
+        raise NoTestsCollectedError("No tests were collected by pytest in path x")
+
+    monkeypatch.setattr(resolver, "run_pytest", boom)
+
+    with pytest.raises(NoTestsCollectedError):
         resolver.resolve_test_run(str(tmp_path))
 
 

@@ -24,3 +24,7 @@ class PytestExecutionError(EvidenceError):
 
 class ResolverError(EvidenceError):
     """Erro base para falhas no resolver."""
+
+
+class NoTestsCollectedError(EvidenceError):
+    """No tests were collected by pytest."""

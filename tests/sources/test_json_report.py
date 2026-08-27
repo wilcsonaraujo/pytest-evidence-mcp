@@ -9,7 +9,7 @@ from pytest_evidence_mcp.sources.json_report import (
     parse_json_report_safe,
 )
 
-FIXTURE = Path(__file__).parent / "fixtures" / "json_report" / "sample.json"
+FIXTURE = Path(__file__).parent.parent / "fixtures" / "json_report" / "sample.json"
 
 
 @pytest.fixture

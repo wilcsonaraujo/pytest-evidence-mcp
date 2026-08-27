@@ -6,7 +6,7 @@ import pytest
 from pytest_evidence_mcp.core.models import SourceKind
 from pytest_evidence_mcp.sources.junitxml import parse_junit_xml, parse_junit_xml_safe
 
-FIXTURE = Path(__file__).parent / "fixtures" / "junit" / "sample.xml"
+FIXTURE = Path(__file__).parent.parent / "fixtures" / "junit" / "sample.xml"
 
 
 @pytest.fixture
