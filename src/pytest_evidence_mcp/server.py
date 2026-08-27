@@ -1,6 +1,6 @@
-from mcp.server import MCPServer
 from functools import partial
 
+from mcp.server import MCPServer
 from mcp.server.mcpserver.resources import FunctionResource
 
 from pytest_evidence_mcp.resources.tools_documentation import build_tool_documentation
