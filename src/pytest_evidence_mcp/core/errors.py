@@ -36,3 +36,7 @@ class TestNotFoundError(EvidenceError):
 
 class TestDidNotFailError(EvidenceError):
     "Exists tests but is not failed or error"
+
+
+class UnrecognizedOutputFormatError(EvidenceError):
+    """The pytest output format is not recognized by the server."""

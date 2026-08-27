@@ -4,7 +4,7 @@ _ASSERT_EQ = re.compile(r"^assert\s+(.+?)\s*==\s*(.+)$", re.MULTILINE)
 
 
 def extract_actual_expected(
-    message: str, error_type: str | None = None
+    message: str | None, error_type: str | None = None
 ) -> tuple[str | None, str | None]:
     """Extract (expected, actual) from an AssertionError message, when safe."""
     if error_type != "AssertionError" or not message:
@@ -23,7 +23,7 @@ def extract_actual_expected(
 
 
 def extract_actual_expected_safe(
-    message: str, error_type: str | None = None
+    message: str | None, error_type: str | None = None
 ) -> tuple[str | None, str | None]:
     """Same as extract_expected_actual, but never raises."""
     try:

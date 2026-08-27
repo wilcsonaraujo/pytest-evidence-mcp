@@ -1,0 +1,43 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/fixture_src
+plugins: metadata-3.1.1, json-report-1.5.0, anyio-4.14.2
+collected 4 items
+
+tests/test_sample.py .FFE                                                [100%]
+
+==================================== ERRORS ====================================
+______________________ ERROR at setup of test_setup_error ______________________
+
+    @pytest.fixture
+    def broken_fixture():
+>       raise RuntimeError("fixture setup blew up")
+E       RuntimeError: fixture setup blew up
+
+tests/test_sample.py:7: RuntimeError
+=================================== FAILURES ===================================
+______________________________ test_assert_fails _______________________________
+
+    def test_assert_fails():
+        logging.getLogger().warning("about to fail")
+        print("some captured stdout")
+>       assert 500 == 201
+E       assert 500 == 201
+
+tests/test_sample.py:17: AssertionError
+----------------------------- Captured stdout call -----------------------------
+some captured stdout
+------------------------------ Captured log call -------------------------------
+WARNING  root:test_sample.py:15 about to fail
+_________________________________ test_raises __________________________________
+
+    def test_raises():
+>       raise ValueError("something went wrong")
+E       ValueError: something went wrong
+
+tests/test_sample.py:21: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_sample.py::test_assert_fails - assert 500 == 201
+FAILED tests/test_sample.py::test_raises - ValueError: something went wrong
+ERROR tests/test_sample.py::test_setup_error - RuntimeError: fixture setup bl...
+===================== 2 failed, 1 passed, 1 error in 0.03s =====================
