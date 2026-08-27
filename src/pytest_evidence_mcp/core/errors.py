@@ -28,3 +28,11 @@ class ResolverError(EvidenceError):
 
 class NoTestsCollectedError(EvidenceError):
     """No tests were collected by pytest."""
+
+
+class TestNotFoundError(EvidenceError):
+    "Test not found"
+
+
+class TestDidNotFailError(EvidenceError):
+    "Exists tests but is not failed or error"

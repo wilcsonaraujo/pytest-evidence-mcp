@@ -1,21 +1,13 @@
 from mcp.server import MCPServer
 
 from pytest_evidence_mcp.core.errors import EvidenceError
+from pytest_evidence_mcp.tools.get_test_failure import get_test_failure
 from pytest_evidence_mcp.tools.list_failed_tests import list_failed_tests
 
 mcp = MCPServer("pytest-evidence-mcp", version="0.1.0")
 
 mcp.add_tool(list_failed_tests)
-
-@mcp.tool()
-def get_test_failure(test_name: str, path: str):
-    """Return the full evidence pytest already collected for one failing test.
-
-    Use after list_failed_tests. Delivers the error, the traceback and the
-    output captured during that test — no diagnosis, only raw evidence.
-    """
-
-    raise EvidenceError("get_test_failure is not implemented yet")
+mcp.add_tool(get_test_failure)
 
 
 @mcp.tool()
