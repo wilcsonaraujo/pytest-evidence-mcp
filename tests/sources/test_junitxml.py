@@ -116,7 +116,7 @@ def test_same_instant_different_utc_offsets_produce_same_local_time():
 def test_naive_timestamp_passes_through_unchanged():
     result = _parse_timestamp("2024-01-01T12:00:00")
 
-    assert result == datetime(2024, 1, 1, 12, 0, 0)
+    assert result == datetime(2024, 1, 1, 12, 0, 0)  # noqa: DTZ001 - naive on purpose, that's what's being asserted
     assert result.tzinfo is None
 
 
