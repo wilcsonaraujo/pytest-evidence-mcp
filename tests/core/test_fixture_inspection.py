@@ -71,3 +71,53 @@ def test_containers_themselves_are_never_counted():
     nested = inspect({"user": {"name": "Alice", "age": 30}})
 
     assert flat["field_count"] == nested["field_count"] == 2
+
+
+def test_small_list_of_dicts_is_never_collapsed():
+    """At or below the threshold, every item is enumerated individually -
+    no output-size problem to solve at that scale."""
+    orders = [{"id": i, "total": 10.0} for i in range(10)]
+    result = inspect({"orders": orders})
+
+    assert result["collapsed_lists"] == {}
+    assert result["types"]["orders[0].id"] == "integer"
+    assert result["types"]["orders[9].id"] == "integer"
+
+
+def test_large_uniform_list_collapses_to_single_entry():
+    orders = [{"id": i, "total": 10.0} for i in range(50)]
+    result = inspect({"orders": orders})
+
+    assert result["collapsed_lists"] == {"orders": 50}
+    assert result["types"] == {"orders[].id": "integer", "orders[].total": "float"}
+
+
+def test_large_list_with_anomaly_keeps_outlier_visible():
+    """49 identical records collapse into one entry; the one record with a
+    different shape at "total" (string instead of float) is exactly the
+    kind of anomaly this tool exists to surface, so it must stay visible
+    with its real index instead of being folded away."""
+    orders = [{"id": i, "total": 10.0} for i in range(50)]
+    orders[23]["total"] = "not-a-number"
+
+    result = inspect({"orders": orders})
+
+    assert result["collapsed_lists"] == {"orders": 49}
+    assert result["types"]["orders[].id"] == "integer"
+    assert result["types"]["orders[].total"] == "float"
+    # the whole anomalous record is reported, not just the field that
+    # diverges - full context on the one item worth looking at
+    assert result["types"]["orders[23].id"] == "integer"
+    assert result["types"]["orders[23].total"] == "string"
+
+
+def test_large_list_with_no_repeating_shape_enumerates_everything():
+    """No two items share a shape at all - collapsing would save nothing
+    and risks hiding the one item that matters, so every item is reported
+    individually, same as a small list."""
+    orders = [{f"field_{i}": i} for i in range(20)]
+
+    result = inspect({"orders": orders})
+
+    assert result["collapsed_lists"] == {}
+    assert result["field_count"] == 20

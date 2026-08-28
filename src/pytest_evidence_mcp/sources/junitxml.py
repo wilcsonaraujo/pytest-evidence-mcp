@@ -64,6 +64,23 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
 
+    # KNOWN LIMITATION: junit's classname is dot-separated (JUnit/Java
+    # convention, e.g. "tests.test_api.TestFoo") and doesn't preserve where
+    # the file path ends and the class name begins - so this can't be
+    # reliably converted back to pytest's real nodeid format
+    # ("tests/test_api.py::TestFoo::test_bar"). For a bare function this
+    # happens to be close ("tests.test_api::test_foo" vs the real
+    # "tests/test_api.py::test_foo"), but for class-based tests it's wrong.
+    # A disk-based reconstruction (probe candidate file paths) was
+    # considered and rejected: it would couple this pure parser to the
+    # project's filesystem, cost a stat() per dot-segment per test case on
+    # every call (no caching, by design - see PRD section 6), and can fail
+    # or pick the wrong candidate if files were moved/renamed between the
+    # pytest run and this call - a realistic timing window given the
+    # agent-driven workflow this MCP is built for. See PRD section 10 and
+    # TestCaseResult.nodeid's docstring. Only affects the junit.xml-only
+    # branch - nodeid from pytest-json-report is exact, straight from
+    # pytest itself.
     nodeid = f"{classname}::{name}" if classname else name
     time_sec = _safe_float(element.get("time"), 0.0)
     duration_ms = int(time_sec * 1000) if time_sec > 0 else None

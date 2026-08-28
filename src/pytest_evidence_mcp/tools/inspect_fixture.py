@@ -12,6 +12,7 @@ class InspectFixtureValid(TypedDict):
     field_count: int
     null_fields: list[str]
     types: dict[str, str]
+    collapsed_lists: dict[str, int]
 
 
 class InspectFixtureInvalid(TypedDict):
@@ -37,4 +38,5 @@ def inspect_fixture(path: str) -> InspectFixtureValid | InspectFixtureInvalid:
         "field_count": result["field_count"],
         "null_fields": result["null_fields"],
         "types": result["types"],
+        "collapsed_lists": result["collapsed_lists"],
     }
