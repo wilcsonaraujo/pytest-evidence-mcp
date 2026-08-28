@@ -3,7 +3,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pytest_evidence_mcp.core.errors import EvidenceError, ResolverError
+from pytest_evidence_mcp.core.errors import (
+    EvidenceError,
+    ProjectPathNotFoundError,
+    ResolverError,
+)
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources.config import (
     get_config_paths,
@@ -201,6 +205,9 @@ def resolve_test_run(
         EvidenceError: branch 3 failed - the specific subclass says why.
     """
     project_root = Path(project_path)
+    if not project_root.exists():
+        raise ProjectPathNotFoundError(f"Project path does not exist: {project_root}")
+    
     logger.info(f"Resolving test run for: {project_root}")
 
     if force:

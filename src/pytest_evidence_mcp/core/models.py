@@ -40,7 +40,14 @@ class TestCaseResult(BaseModel):
     __test__ = False  # not a pytest test class, just named like one
 
     nodeid: str = Field(
-        description="Full pytest nodeid, e.g. 'tests/test_api.py::test_foo'."
+        description=(
+            "Full pytest nodeid, e.g. 'tests/test_api.py::test_foo'. "
+            "Exact only when sourced from pytest-json-report. When sourced "
+            "from junit.xml alone, this is reconstructed from the "
+            "<testcase classname=...> attribute and may not match pytest's "
+            "real nodeid format for class-based tests - see junitxml.py's "
+            "_parse_testcase for why this can't be reversed reliably."
+        )
     )
     name: str = Field(
         description="Short name, e.g. 'test_foo'. Convenience for display/matching."

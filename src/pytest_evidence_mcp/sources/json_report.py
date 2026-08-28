@@ -68,6 +68,15 @@ def _parse_test_case(test_data: dict[str, Any]) -> TestCaseResult | None:
     name = _extract_name_from_nodeid(nodeid)
     outcome = test_data.get("outcome", "")
 
+    # pytest-json-report emits "xfailed"/"xpassed", which do not exist in the
+    # TestCaseResult Literal — junit.xml already collapses both into
+    # skipped/passed natively, so we align them here to keep the two
+    # branches consistent with each other.
+    if outcome == "xfailed":
+        outcome = "skipped"
+    elif outcome == "xpassed":
+        outcome = "passed"
+
     call = test_data.get("call", {})
     duration = call.get("duration", 0.0)
     duration_ms = int(duration * 1000) if duration > 0 else None
@@ -125,11 +134,11 @@ def parse_json_report(
 
     summary = data.get("summary", {})
     total_tests = summary.get("total", 0)
-    passed = summary.get("passed", 0)
+    passed = summary.get("passed", 0) + summary.get("xpassed", 0)
     # "failed" and "error" are separate counters here - combined to match
     # how junitxml.py already merges <failure>/<error> into one number.
     failed = summary.get("failed", 0) + summary.get("error", 0)
-    skipped = summary.get("skipped", 0)
+    skipped = summary.get("skipped", 0) + summary.get("xfailed", 0)
 
     created = data.get("created")
     generated_at = _parse_timestamp(created) if created else None

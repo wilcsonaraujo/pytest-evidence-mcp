@@ -1,7 +1,9 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # only for the Element type hint below
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+
+import defusedxml.ElementTree as DefusedET  # actual parsing goes through here
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -52,7 +54,7 @@ def _parse_timestamp(timestamp: str | None) -> datetime | None:
     except ValueError:
         return None
 
-    return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+    return parsed.astimezone().replace(tzinfo=None) if parsed.tzinfo else parsed
 
 
 def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
@@ -62,6 +64,23 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
 
+    # KNOWN LIMITATION: junit's classname is dot-separated (JUnit/Java
+    # convention, e.g. "tests.test_api.TestFoo") and doesn't preserve where
+    # the file path ends and the class name begins - so this can't be
+    # reliably converted back to pytest's real nodeid format
+    # ("tests/test_api.py::TestFoo::test_bar"). For a bare function this
+    # happens to be close ("tests.test_api::test_foo" vs the real
+    # "tests/test_api.py::test_foo"), but for class-based tests it's wrong.
+    # A disk-based reconstruction (probe candidate file paths) was
+    # considered and rejected: it would couple this pure parser to the
+    # project's filesystem, cost a stat() per dot-segment per test case on
+    # every call (no caching, by design - see PRD section 6), and can fail
+    # or pick the wrong candidate if files were moved/renamed between the
+    # pytest run and this call - a realistic timing window given the
+    # agent-driven workflow this MCP is built for. See PRD section 10 and
+    # TestCaseResult.nodeid's docstring. Only affects the junit.xml-only
+    # branch - nodeid from pytest-json-report is exact, straight from
+    # pytest itself.
     nodeid = f"{classname}::{name}" if classname else name
     time_sec = _safe_float(element.get("time"), 0.0)
     duration_ms = int(time_sec * 1000) if time_sec > 0 else None
@@ -153,12 +172,15 @@ def parse_junit_xml(
 ) -> TestRun:
     """Parses a JUnit XML file into a TestRun object."""
     try:
-        tree = ET.parse(file_path)
+        tree = DefusedET.parse(file_path)
         root = tree.getroot()
-    except ET.ParseError as e:
+    except DefusedET.ParseError as e:
         raise ValueError(f"Invalid XML file: {file_path}") from e
     except FileNotFoundError as e:
         raise FileNotFoundError(f"JUnit XML file not found: {file_path}") from e
+
+    if root is None:
+        raise ValueError(f"Invalid JUnit XML: no root element in {file_path}")
 
     testsuite = root if root.tag == "testsuite" else root.find("testsuite")
 
@@ -178,7 +200,9 @@ def parse_junit_xml(
         if result:
             test_cases.append(result)
 
-    passed = total_tests - failures - errors - skipped
+    # Real pytest counts are always consistent, but a hand-edited or
+    # truncated junit.xml could make this go negative - clamp defensively.
+    passed = max(0, total_tests - failures - errors - skipped)
 
     return TestRun(
         source=source,

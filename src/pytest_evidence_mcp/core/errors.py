@@ -34,9 +34,21 @@ class TestNotFoundError(EvidenceError):
     "Test not found"
 
 
+class AmbiguousTestNameError(EvidenceError):
+    """Multiple tests share the same short name; a full nodeid is needed to disambiguate."""
+
+
 class TestDidNotFailError(EvidenceError):
     "Exists tests but is not failed or error"
 
 
 class UnrecognizedOutputFormatError(EvidenceError):
     """The pytest output format is not recognized by the server."""
+
+
+class ProjectPathNotFoundError(EvidenceError):
+    """The project path is not found."""
+
+
+class IncompleteEvidenceError(EvidenceError):
+    """Report claims a test failed/errored but carries no failure detail for it."""

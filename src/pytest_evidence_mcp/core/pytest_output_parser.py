@@ -17,6 +17,9 @@ _CAPTURED_HEADER = re.compile(
 )
 _ERROR_AT_PREFIX = re.compile(r"^ERROR at (setup|teardown) of\s+")
 _MESSAGE_LINE = re.compile(r"^E\s+(.*)$", re.MULTILINE)
+_SUMMARY_COUNTS = re.compile(
+    r"(\d+)\s+(passed|failed|errors?|skipped|xfailed|xpassed)", re.IGNORECASE
+)
 
 
 class ParsedFailure(TypedDict):
@@ -48,13 +51,36 @@ def parse_raw_text(raw_text: str) -> list[ParsedFailure]:
         outcome: Literal["failed", "error"] = ("failed" if section_name == "FAILURES" else "error")
         results.extend(_parse_section(section_body, outcome))
 
-    if not results:
+    if not results and not _is_reported_all_green(raw_text):
         raise UnrecognizedOutputFormatError(
             "Could not find any recognizable '=== FAILURES ===' or "
             "'==== ERRORS ====' block in the given text"
         )
 
     return results
+
+
+def _is_reported_all_green(raw_text: str) -> bool:
+    """True only when the text's own final summary line confirms zero
+    failed/error tests - not just "no FAILURES/ERRORS section found".
+
+    Distinguishes a genuinely all-passing run (nothing to report, not an
+    error) from output we simply failed to parse (e.g. a different
+    formatting plugin like pytest-sugar) - in the latter case there could
+    still be real failures we're just not seeing, so we must keep raising.
+    """
+    summary_lines = _ANY_BAR_HEADER.findall(raw_text)
+    if not summary_lines:
+        return False
+
+    last_summary = summary_lines[-1]
+    counts = {
+        word.lower(): int(num) for num, word in _SUMMARY_COUNTS.findall(last_summary)
+    }
+    failed_count = counts.get("failed", 0) + counts.get("error", 0) + counts.get(
+        "errors", 0
+    )
+    return failed_count == 0
 
 
 def _slice_section_body(raw_text: str, start: int) -> str:

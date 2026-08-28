@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pytest_evidence_mcp.core.errors import ResolverError
+from pytest_evidence_mcp.core.errors import ProjectPathNotFoundError, ResolverError
 from pytest_evidence_mcp.core.models import SourceKind, TestRun
 from pytest_evidence_mcp.sources import resolver
 
@@ -17,6 +17,11 @@ def _fake_test_run(source: SourceKind) -> TestRun:
 
 # --- branches 1 and 2: real files, by convention (no config at all) -------
 
+def test_nonexistent_path_raises_project_path_not_found(tmp_path):
+    missing = tmp_path / "does_not_exist"
+
+    with pytest.raises(ProjectPathNotFoundError):
+        resolver.resolve_test_run(str(missing))
 
 def test_resolves_json_report_by_convention(tmp_path):
     shutil.copy(FIXTURE_JSON, tmp_path / ".report.json")

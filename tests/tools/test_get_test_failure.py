@@ -1,9 +1,14 @@
+import json
 import shutil
 from pathlib import Path
 
 import pytest
 
-from pytest_evidence_mcp.core.errors import TestDidNotFailError, TestNotFoundError
+from pytest_evidence_mcp.core.errors import (
+    AmbiguousTestNameError,
+    TestDidNotFailError,
+    TestNotFoundError,
+)
 from pytest_evidence_mcp.tools.get_test_failure import get_test_failure
 
 FIXTURE_JSON = Path(__file__).parent.parent / "fixtures" / "json_report" / "sample.json"
@@ -49,3 +54,97 @@ def test_passing_test_raises_did_not_fail(tmp_path):
 
     with pytest.raises(TestDidNotFailError):
         get_test_failure("test_passes", str(tmp_path))
+
+
+def test_max_output_chars_truncates_large_traceback(tmp_path):
+    shutil.copy(FIXTURE_JSON, tmp_path / ".report.json")
+
+    result = get_test_failure("test_assert_fails", str(tmp_path), max_output_chars=30)
+
+    assert result["traceback"] is not None
+    assert "chars omitted" in result["traceback"]
+    assert result["traceback"].endswith("AssertionError")
+
+
+def test_default_max_output_chars_does_not_truncate_small_fields(tmp_path):
+    shutil.copy(FIXTURE_JSON, tmp_path / ".report.json")
+
+    result = get_test_failure("test_assert_fails", str(tmp_path))
+
+    assert result["traceback"] is not None
+    assert "chars omitted" not in result["traceback"]
+
+
+def test_ambiguous_short_name_raises_with_candidates(tmp_path):
+    report = {
+        "created": 1700000000.0,
+        "summary": {"total": 2, "failed": 2},
+        "tests": [
+            {
+                "nodeid": "tests/test_a.py::test_duplicate",
+                "outcome": "failed",
+                "call": {
+                    "crash": {"message": "assert 1 == 2"},
+                    "longrepr": "tests/test_a.py:2: AssertionError",
+                    "duration": 0.01,
+                },
+                "setup": {},
+                "teardown": {},
+            },
+            {
+                "nodeid": "tests/test_b.py::test_duplicate",
+                "outcome": "failed",
+                "call": {
+                    "crash": {"message": "assert 3 == 4"},
+                    "longrepr": "tests/test_b.py:2: AssertionError",
+                    "duration": 0.01,
+                },
+                "setup": {},
+                "teardown": {},
+            },
+        ],
+    }
+    (tmp_path / ".report.json").write_text(json.dumps(report))
+
+    with pytest.raises(AmbiguousTestNameError) as exc_info:
+        get_test_failure("test_duplicate", str(tmp_path))
+
+    assert "tests/test_a.py::test_duplicate" in str(exc_info.value)
+    assert "tests/test_b.py::test_duplicate" in str(exc_info.value)
+
+
+def test_ambiguous_short_name_resolved_by_full_nodeid(tmp_path):
+    report = {
+        "created": 1700000000.0,
+        "summary": {"total": 2, "failed": 2},
+        "tests": [
+            {
+                "nodeid": "tests/test_a.py::test_duplicate",
+                "outcome": "failed",
+                "call": {
+                    "crash": {"message": "assert 1 == 2"},
+                    "longrepr": "tests/test_a.py:2: AssertionError",
+                    "duration": 0.01,
+                },
+                "setup": {},
+                "teardown": {},
+            },
+            {
+                "nodeid": "tests/test_b.py::test_duplicate",
+                "outcome": "failed",
+                "call": {
+                    "crash": {"message": "assert 3 == 4"},
+                    "longrepr": "tests/test_b.py:2: AssertionError",
+                    "duration": 0.01,
+                },
+                "setup": {},
+                "teardown": {},
+            },
+        ],
+    }
+    (tmp_path / ".report.json").write_text(json.dumps(report))
+
+    result = get_test_failure("tests/test_a.py::test_duplicate", str(tmp_path))
+
+    assert result["actual"] == "1"
+    assert result["expected"] == "2"

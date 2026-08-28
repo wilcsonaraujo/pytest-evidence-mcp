@@ -26,9 +26,9 @@ DEFAULT_JSON_REPORT_PATH = Path(".report.json")
 def parse_pytest_config(project_path: Path | None = None) -> PytestPaths:
     """
     Parses pytest configurations from project files.
-    Search order:
-        1. pyproject.toml ([tool.pytest.ini_options] → addopts)
-        2. pytest.ini ([pytest] → addopts)
+    Search order matches real pytest's own config discovery precedence:
+        1. pytest.ini ([pytest] → addopts)
+        2. pyproject.toml ([tool.pytest.ini_options] → addopts)
         3. tox.ini ([testenv] → commands → addopts)
         4. setup.cfg ([tool:pytest] → addopts)
     Args:
@@ -43,8 +43,8 @@ def parse_pytest_config(project_path: Path | None = None) -> PytestPaths:
     project_path = project_path or Path.cwd()
 
     config_files: list[tuple[str, Path]] = [
-        ("pyproject.toml", project_path / "pyproject.toml"),
         ("pytest.ini", project_path / "pytest.ini"),
+        ("pyproject.toml", project_path / "pyproject.toml"),
         ("tox.ini", project_path / "tox.ini"),
         ("setup.cfg", project_path / "setup.cfg"),
     ]
@@ -74,7 +74,6 @@ def _parse_pyproject_addopts(file_path: Path) -> str | None:
     try:
         with open(file_path, "rb") as file:
             data = tomllib.load(file)
-
     except tomllib.TOMLDecodeError as e:
         raise ConfigParseError(f"Malformed {file_path}: {e}") from e
     except OSError as e:
@@ -87,10 +86,26 @@ def _parse_pyproject_addopts(file_path: Path) -> str | None:
             if "ini_options" in pytest_config and isinstance(
                 pytest_config["ini_options"], dict
             ):
-                return pytest_config["ini_options"].get("addopts")
+                addopts = pytest_config["ini_options"].get("addopts")
             elif "addopts" in pytest_config:
-                return pytest_config["addopts"]
+                addopts = pytest_config["addopts"]
+            else:
+                return None
+            return _normalize_addopts(addopts, file_path)
     return None
+
+def _normalize_addopts(addopts: object, file_path: Path) -> str | None:
+    """pytest accepts addopts as a TOML array, not just a string - collapse
+    it into the space-separated form the regex extraction expects."""
+    if addopts is None:
+        return None
+    if isinstance(addopts, str):
+        return addopts
+    if isinstance(addopts, list):
+        return " ".join(str(item) for item in addopts)
+    raise ConfigParseError(
+        f"Unexpected type for addopts in {file_path}: {type(addopts).__name__}"
+    )
 
 
 def _parse_tox_addopts(file_path: Path) -> str | None:
