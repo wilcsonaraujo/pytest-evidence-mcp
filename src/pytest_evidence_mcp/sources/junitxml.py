@@ -1,7 +1,9 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # only for the Element type hint below
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+
+import defusedxml.ElementTree as DefusedET  # actual parsing goes through here
 
 from pytest_evidence_mcp.core.assertion import (
     derive_error_type_from_traceback,
@@ -52,7 +54,7 @@ def _parse_timestamp(timestamp: str | None) -> datetime | None:
     except ValueError:
         return None
 
-    return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+    return parsed.astimezone().replace(tzinfo=None) if parsed.tzinfo else parsed
 
 
 def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
@@ -153,12 +155,15 @@ def parse_junit_xml(
 ) -> TestRun:
     """Parses a JUnit XML file into a TestRun object."""
     try:
-        tree = ET.parse(file_path)
+        tree = DefusedET.parse(file_path)
         root = tree.getroot()
-    except ET.ParseError as e:
+    except DefusedET.ParseError as e:
         raise ValueError(f"Invalid XML file: {file_path}") from e
     except FileNotFoundError as e:
         raise FileNotFoundError(f"JUnit XML file not found: {file_path}") from e
+
+    if root is None:
+        raise ValueError(f"Invalid JUnit XML: no root element in {file_path}")
 
     testsuite = root if root.tag == "testsuite" else root.find("testsuite")
 
@@ -178,7 +183,9 @@ def parse_junit_xml(
         if result:
             test_cases.append(result)
 
-    passed = total_tests - failures - errors - skipped
+    # Real pytest counts are always consistent, but a hand-edited or
+    # truncated junit.xml could make this go negative - clamp defensively.
+    passed = max(0, total_tests - failures - errors - skipped)
 
     return TestRun(
         source=source,

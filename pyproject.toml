@@ -14,6 +14,7 @@ dependencies = [
     "tomli>=2.0.0; python_version < '3.11'",
     "pyyaml>=6.0.0",
     "typing_extensions>=4.0.0",
+    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ dev = [
     "mypy>=1.13.0",
     "ruff>=0.7.0",
     "types-PyYAML>=6.0.0",
+    "types-defusedxml>=0.7.0",
     "typing_extensions>=4.0.0",
 ]
 

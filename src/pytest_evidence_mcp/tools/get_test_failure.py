@@ -1,6 +1,10 @@
 from typing_extensions import TypedDict
 
-from pytest_evidence_mcp.core.errors import TestDidNotFailError, TestNotFoundError
+from pytest_evidence_mcp.core.errors import (
+    IncompleteEvidenceError,
+    TestDidNotFailError,
+    TestNotFoundError,
+)
 from pytest_evidence_mcp.sources.resolver import resolve_test_run
 
 
@@ -34,10 +38,12 @@ def get_test_failure(test_name: str, path: str) -> GetTestFailureOutput:
             f"Test '{test_name}' did not fail (outcome: {test_case.outcome}) - nothing to report"
         )
 
-    assert test_case.failure is not None, (
-        f"outcome={test_case.outcome!r} but failure is None - parser bug in "
-        f"json_report.py/junitxml.py, they should always populate both together"
-    )
+    if test_case.failure is None:
+        raise IncompleteEvidenceError(
+            f"Test '{test_name}' has outcome={test_case.outcome!r} but the "
+            f"report contains no failure details for it (possibly an "
+            f"incomplete or partial report)"
+        )
 
     return {
         "error_type": test_case.failure.error_type,

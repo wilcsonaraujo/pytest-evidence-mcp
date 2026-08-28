@@ -69,9 +69,9 @@ def test_absolute_path_in_addopts_is_kept_as_is(tmp_path):
     assert paths.junitxml_path == abs_path
 
 
-def test_pyproject_takes_priority_over_pytest_ini(tmp_path):
-    """Search order: pyproject.toml before pytest.ini - only the first
-    match found should be used."""
+def test_pytest_ini_takes_priority_over_pyproject(tmp_path):
+    """Search order matches real pytest: pytest.ini before pyproject.toml -
+    only the first match found should be used."""
     (tmp_path / "pyproject.toml").write_text(
         '[tool.pytest.ini_options]\naddopts = "--junitxml=from_pyproject.xml"\n'
     )
@@ -79,4 +79,4 @@ def test_pyproject_takes_priority_over_pytest_ini(tmp_path):
         "[pytest]\naddopts = --junitxml=from_pytest_ini.xml\n"
     )
     paths = get_config_paths(tmp_path)
-    assert paths.junitxml_path == tmp_path / "from_pyproject.xml"
+    assert paths.junitxml_path == tmp_path / "from_pytest_ini.xml"

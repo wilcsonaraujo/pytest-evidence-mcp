@@ -40,3 +40,11 @@ class TestDidNotFailError(EvidenceError):
 
 class UnrecognizedOutputFormatError(EvidenceError):
     """The pytest output format is not recognized by the server."""
+
+
+class ProjectPathNotFoundError(EvidenceError):
+    """The project path is not found."""
+
+
+class IncompleteEvidenceError(EvidenceError):
+    """Report claims a test failed/errored but carries no failure detail for it."""
