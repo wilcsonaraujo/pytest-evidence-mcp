@@ -6,6 +6,7 @@ import pytest
 
 from pytest_evidence_mcp.core.errors import (
     AmbiguousTestNameError,
+    IncompleteEvidenceError,
     TestDidNotFailError,
     TestNotFoundError,
 )
@@ -148,3 +149,29 @@ def test_ambiguous_short_name_resolved_by_full_nodeid(tmp_path):
 
     assert result["actual"] == "1"
     assert result["expected"] == "2"
+
+
+def test_failed_outcome_without_crash_block_raises_incomplete_evidence(tmp_path):
+    """Regression test for finding #5: a test can be reported with
+    outcome='failed'/'error' but no 'crash' in any of its call/setup/teardown
+    phases - e.g. a truncated or partially-written report. This must surface
+    as a clean, specific IncompleteEvidenceError, not a None `failure` field
+    silently treated as if the test had evidence to show.
+    """
+    report = {
+        "created": 1700000000.0,
+        "summary": {"total": 1, "failed": 1},
+        "tests": [
+            {
+                "nodeid": "tests/test_x.py::test_incomplete",
+                "outcome": "failed",
+                "call": {},
+                "setup": {},
+                "teardown": {},
+            },
+        ],
+    }
+    (tmp_path / ".report.json").write_text(json.dumps(report))
+
+    with pytest.raises(IncompleteEvidenceError):
+        get_test_failure("test_incomplete", str(tmp_path))

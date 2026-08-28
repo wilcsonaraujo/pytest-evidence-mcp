@@ -19,7 +19,7 @@ class GetTestFailureOutput(TypedDict):
     stdout: str | None
     stderr: str | None
     log: str | None
-    duration: int | None
+    duration_ms: int | None
 
 def get_test_failure(test_name: str, path: str,
     max_output_chars: int = DEFAULT_MAX_OUTPUT_CHARS,) -> GetTestFailureOutput:
@@ -67,5 +67,5 @@ def get_test_failure(test_name: str, path: str,
         "stdout": truncate_tail(test_case.captured.stdout, max_output_chars),
         "stderr": truncate_tail(test_case.captured.stderr, max_output_chars),
         "log": truncate_tail(test_case.captured.log, max_output_chars),
-        "duration": test_case.duration_ms,
+        "duration_ms": test_case.duration_ms,
     }

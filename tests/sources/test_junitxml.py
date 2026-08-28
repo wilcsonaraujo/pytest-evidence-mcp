@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 
 from pytest_evidence_mcp.core.models import SourceKind
-from pytest_evidence_mcp.sources.junitxml import parse_junit_xml, parse_junit_xml_safe
+from pytest_evidence_mcp.sources.junitxml import (
+    _parse_timestamp,
+    parse_junit_xml,
+    parse_junit_xml_safe,
+)
 
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "junit" / "sample.xml"
 
@@ -89,3 +93,34 @@ def test_malformed_xml_raises(tmp_path):
 
 def test_safe_variant_returns_none_instead_of_raising():
     assert parse_junit_xml_safe(Path("/no/such/file.xml")) is None
+
+
+def test_same_instant_different_utc_offsets_produce_same_local_time():
+    """Regression test for finding #7: the original code stripped tzinfo
+    without converting first (`parsed.replace(tzinfo=None)`), so two
+    timestamps representing the exact same instant but written with
+    different UTC offsets produced two different naive datetimes - whichever
+    offset happened to be in the file leaked straight through as if it were
+    already local time. The fix calls `.astimezone()` before stripping, so
+    the same instant must always produce the same naive local datetime,
+    regardless of which offset the source used - and regardless of what the
+    machine running this test considers "local", which is why this doesn't
+    need to mock the timezone to be deterministic.
+    """
+    utc_offset = _parse_timestamp("2024-01-01T12:00:00+00:00")
+    minus_three_offset = _parse_timestamp("2024-01-01T09:00:00-03:00")  # same instant
+
+    assert utc_offset == minus_three_offset
+
+
+def test_naive_timestamp_passes_through_unchanged():
+    result = _parse_timestamp("2024-01-01T12:00:00")
+
+    assert result == datetime(2024, 1, 1, 12, 0, 0)  # noqa: DTZ001 - naive on purpose, that's what's being asserted
+    assert result.tzinfo is None
+
+
+def test_none_and_malformed_timestamp_return_none():
+    assert _parse_timestamp(None) is None
+    assert _parse_timestamp("") is None
+    assert _parse_timestamp("not-a-timestamp") is None

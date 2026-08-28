@@ -60,7 +60,7 @@ def _parse_timestamp(timestamp: str | None) -> datetime | None:
 def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     """Parses a <testcase> element into a TestCaseResult."""
     outcome: Literal["passed", "failed", "error", "skipped"]
-    
+
     name = element.get("name", "unknown")
     classname = element.get("classname", "")
 
@@ -74,26 +74,39 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
     # A disk-based reconstruction (probe candidate file paths) was
     # considered and rejected: it would couple this pure parser to the
     # project's filesystem, cost a stat() per dot-segment per test case on
-    # every call (no caching, by design - see PRD section 6), and can fail
+    # every call (no caching, by design), and can fail
     # or pick the wrong candidate if files were moved/renamed between the
     # pytest run and this call - a realistic timing window given the
-    # agent-driven workflow this MCP is built for. See PRD section 10 and
+    # agent-driven workflow this MCP is built for.
     # TestCaseResult.nodeid's docstring. Only affects the junit.xml-only
     # branch - nodeid from pytest-json-report is exact, straight from
     # pytest itself.
     nodeid = f"{classname}::{name}" if classname else name
-    time_sec = _safe_float(element.get("time"), 0.0)
-    duration_ms = int(time_sec * 1000) if time_sec > 0 else None
+    time_attr = element.get("time")
+    duration_ms = (
+        int(_safe_float(time_attr, 0.0) * 1000) if time_attr is not None else None
+    )
 
-    # Checks children to decide the outcome.
+    # <system-out>/<system-err> only exist when junit_logging=system-out
+    # is enabled (this is not the pytest default; runner.py now explicitly
+    # requests it in branch 3, whereas in branch 2, it depends on the target
+    # project already having this configuration). JUnit mixes captured stdout
+    # AND log records within the same <system-out>—unlike pytest-json-report,
+    # which separates the two—so `log` is always None in this source;
+    # they cannot be reliably separated again.
+    system_out = element.find("system-out")
+    system_err = element.find("system-err")
+    captured = CapturedOutput(
+        stdout=system_out.text if system_out is not None else None,
+        stderr=system_err.text if system_err is not None else None,
+    )
+
     failure = element.find("failure")
     error = element.find("error")
     skipped = element.find("skipped")
 
     if failure is not None:
         outcome = "failed"
-        # <failure> has no `type` attribute in real pytest output - derive
-        # error_type from the traceback instead.
         traceback = failure.text
         message = failure.get("message", "") or (traceback or "")
         error_type = derive_error_type_from_traceback(traceback)
@@ -114,7 +127,7 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
             outcome=outcome,
             duration_ms=duration_ms,
             failure=failure_detail,
-            captured=CapturedOutput(),
+            captured=captured,
         )
 
     elif error is not None:
@@ -139,7 +152,7 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
             outcome=outcome,
             duration_ms=duration_ms,
             failure=error_detail,
-            captured=CapturedOutput(),
+            captured=captured,
         )
 
     elif skipped is not None:
@@ -153,7 +166,7 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
             outcome=outcome,
             duration_ms=duration_ms,
             failure=None,
-            captured=CapturedOutput(),
+            captured=captured,
         )
 
     else:
@@ -163,7 +176,7 @@ def _parse_testcase(element: ET.Element) -> TestCaseResult | None:
             outcome="passed",
             duration_ms=duration_ms,
             failure=None,
-            captured=CapturedOutput(),
+            captured=captured,
         )
 
 

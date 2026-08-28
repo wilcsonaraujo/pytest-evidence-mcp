@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from typing_extensions import TypedDict
 
@@ -12,7 +13,7 @@ class FailedTestEntry(TypedDict):
 
 
 class ListFailedTestsOutput(TypedDict):
-    source: str
+    source: Literal["json_report", "junitxml", "junitxml_subprocess"]
     generated_at: datetime | None
     age_seconds: float | None
     total: int
@@ -27,6 +28,16 @@ def list_failed_tests(path: str) -> ListFailedTestsOutput:
 
     Start here: use it to find which tests failed before investigating any
     single one. `path` is the root of the project under investigation.
+
+    `source` tells you where this data came from, and whether it's fresh:
+    - "json_report": an existing pytest-json-report file was found and read.
+    - "junitxml": an existing junit.xml file was found and read.
+    - "junitxml_subprocess": no report existed, so this call just ran
+      pytest for you, live, right now. This is a fresh execution, not a
+      cached result - there is no caching in this branch. The report it
+      generates is deleted right after parsing, so a repeated call without
+      a persisted report re-runs pytest from scratch every time, at the
+      same cost as the first call.
     """
     test_run, metadata = resolve_test_run(path)
     return {
