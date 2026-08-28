@@ -130,7 +130,15 @@ def run_pytest(
         if extra_args:
             cmd.extend(extra_args)
 
-        cmd.extend([f"--junitxml={temp_file}", "-p", "no:sugar"])
+        cmd.extend(
+            [
+                f"--junitxml={temp_file}",
+                "-p",
+                "no:sugar",
+                "-o",
+                "junit_logging=system-out",
+            ]
+        )
 
         logger.debug(f"Running: {' '.join(cmd)}")
         env = _build_clean_env()
