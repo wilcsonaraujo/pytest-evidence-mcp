@@ -7,6 +7,17 @@ requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Wilcson Araújo" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+]
 
 dependencies = [
     # pytest is intentionally NOT here - it must already be installed in
@@ -23,6 +34,11 @@ dependencies = [
 
 [project.scripts]
 pytest-evidence-mcp = "pytest_evidence_mcp.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/wilcsonaraujo/pytest-evidence-mcp"
+Repository = "https://github.com/wilcsonaraujo/pytest-evidence-mcp"
+Issues = "https://github.com/wilcsonaraujo/pytest-evidence-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
