@@ -6,14 +6,33 @@ The server delivers deterministic data — it does not diagnose. Diagnosis is th
 
 ## Prerequisites
 
-- Python 3.10+ to run this MCP server itself.
+- Python 3.10+.
 - pytest installed in the **target project's own environment** (the project being investigated), not in this server's environment. This server does not depend on pytest as a package — it locates and calls the pytest already installed where the code under investigation lives (its `.venv`, by default). If pytest isn't installed there, `list_failed_tests`/`get_test_failure` raise `PytestNotFoundError` with a clean message instead of crashing.
 - An MCP client that supports stdio transport (Claude Code, VS Code with the Copilot Chat MCP integration, or any other MCP-compatible client).
+- [`uv`](https://docs.astral.sh/uv/) installed, if you're running the server via `uvx` (recommended, see below) rather than from a local clone. Any reasonably recent version works (tested with 0.12.x).
 
-## Installation
+## Quick start: running from PyPI (recommended)
+
+No clone, no virtualenv to manage — `uvx` downloads the package and runs it in an isolated, disposable environment on demand:
 
 ```bash
-git clone <repo-url>
+uvx pytest-evidence-mcp
+```
+
+It should log `Starting MCP Server.` to stderr and wait on stdin (this is a stdio server — running it standalone in a terminal is only useful to sanity-check that it starts; stop it with Ctrl+C). This is also the command your MCP client will run under the hood (see "Registering with an MCP client" below).
+
+**Updating to a new version:** `uvx` resolves the latest version compatible with your Python at each run, but may reuse a cached resolution. To force it to pick up a version you just published:
+
+```bash
+uvx --refresh-package pytest-evidence-mcp pytest-evidence-mcp
+```
+
+## Alternative: running from a local clone (for development)
+
+Only needed if you're modifying this server itself, not to investigate a target project's tests.
+
+```bash
+git clone https://github.com/wilcsonaraujo/pytest-evidence-mcp
 cd pytest-evidence-mcp
 python -m venv .venv
 .venv/bin/pip install -e ".[dev]"      # Linux/macOS
@@ -26,21 +45,35 @@ To confirm it starts correctly:
 .venv/bin/python -m pytest_evidence_mcp
 ```
 
-It should log `Starting MCP Server.` to stderr and wait on stdin (this is a stdio server — it isn't meant to be run standalone in a terminal for regular use, only to sanity-check the install). Stop it with Ctrl+C.
-
 ## Registering with an MCP client
 
-The server is started with `python -m pytest_evidence_mcp`, using the interpreter from the `.venv` created above.
+**Claude Code, from PyPI:**
 
-**Claude Code:**
+```bash
+claude mcp add --transport stdio --scope project pytest-evidence-mcp -- uvx pytest-evidence-mcp
+```
+
+Claude Code only loads MCP servers when a session starts — if you register the server while a session is already open, restart the session (or run `/mcp`) before using the tools.
+
+**VS Code (Copilot Chat), from PyPI**, `.vscode/mcp.json` in the workspace you'll investigate:
+
+```json
+{
+  "servers": {
+    "pytest-evidence-mcp": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["pytest-evidence-mcp"]
+    }
+  }
+}
+```
+
+**From a local clone instead** (development), point `command`/the executable at the `.venv` created above rather than at `uvx`:
 
 ```bash
 claude mcp add --transport stdio --scope project pytest-evidence-mcp -- "/absolute/path/to/pytest-evidence-mcp/.venv/bin/python" -m pytest_evidence_mcp
 ```
-
-On Windows, point to `.venv\Scripts\python.exe` instead. Claude Code only loads MCP servers when a session starts — if you register the server while a session is already open, restart the session (or run `/mcp`) before using the tools.
-
-**VS Code (Copilot Chat), `.vscode/mcp.json` in the workspace you'll investigate:**
 
 ```json
 {
@@ -54,7 +87,9 @@ On Windows, point to `.venv\Scripts\python.exe` instead. Claude Code only loads 
 }
 ```
 
-Any other MCP client that supports a generic stdio server definition (`command` + `args`) can be registered the same way.
+(On Windows, use `.venv\Scripts\python.exe`.)
+
+Any other MCP client that supports a generic stdio server definition (`command` + `args`) can be registered the same way, from either source.
 
 ## How it decides where the data comes from
 
@@ -208,8 +243,9 @@ Each tool also has a matching documentation resource (`docs://tools/<tool_name>`
 
 ## Development
 
+After the local clone install above (`pip install -e ".[dev]"`), you can launch the MCP Inspector against the server directly:
+
 ```bash
-pip install -e ".[dev]"
 mcp dev src/pytest_evidence_mcp/server.py
 ```
 
@@ -219,4 +255,10 @@ Run the test suite and checks:
 pytest
 mypy src/
 ruff check .
+```
+
+Build distributable artifacts (wheel + sdist):
+
+```bash
+uv build
 ```
